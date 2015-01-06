@@ -21,7 +21,7 @@
 //###########################################################################
 #include <set>
 #include <string>
-#include "HwSavingCtrlObj.h"
+#include "lima/HwSavingCtrlObj.h"
 
 namespace lima
 {

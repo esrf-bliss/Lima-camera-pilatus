@@ -26,7 +26,7 @@
 #include <sys/statvfs.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include "Debug.h"
+#include "lima/Debug.h"
 #include "PilatusInterface.h"
 
 using namespace lima;

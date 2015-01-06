@@ -22,7 +22,7 @@
 #ifndef PILATUSCAMERA_H
 #define PILATUSCAMERA_H
 
-#include "Debug.h"
+#include "lima/Debug.h"
 
 
 

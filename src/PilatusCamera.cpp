@@ -37,7 +37,7 @@
 
 #include <poll.h>
 
-#include "Exceptions.h"
+#include "lima/Exceptions.h"
 
 #include "PilatusCamera.h"
 

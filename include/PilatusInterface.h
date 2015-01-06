@@ -22,9 +22,9 @@
 #ifndef PILATUSINTERFACE_H
 #define PILATUSINTERFACE_H
 
-#include "HwInterface.h"
-#include "HwFileEventMgr.h"
-#include "Debug.h"
+#include "lima/HwInterface.h"
+#include "lima/HwFileEventMgr.h"
+#include "lima/Debug.h"
 #include "PilatusCamera.h"
 #include "PilatusSaving.h"
 
