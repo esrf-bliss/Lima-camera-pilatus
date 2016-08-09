@@ -1,7 +1,7 @@
 .. _camera-pilatus:
 
-Pilatus
--------
+Dectris Pilatus
+---------------
 
 .. image:: Pilatus6M.jpg
 
@@ -90,3 +90,52 @@ Start the system
     TANGO_HOST=Host:Port python LimaCCD.py instance_name
 
 If the cameserver window notice a connection, seams to work ;)
+
+How to use
+````````````
+This is a python code example for a simple test:
+
+.. code-block:: python
+
+  from Lima import Pilatus
+  from lima import Core
+
+  cam = Pilatus.Camera()
+  hwint = Pilatus.Interface(cam)
+  ct = Core.CtControl(hwint)
+
+  acq = ct.acquisition()
+
+  # set some low level configuration
+  cam.setThresholdGain(1)
+  cam.setFillMode(True)
+  cam.setEnergy(16.0)
+  cam.setHardwareTriggerDelay(0)
+  cam.setNbExposurePerFrame(1)
+
+  # setting new file parameters and autosaving mode
+  saving=ct.saving()
+
+  pars=saving.getParameters()
+  pars.directory='/buffer/lcb18012/opisg/test_lima'
+  pars.prefix='test1_'
+  pars.suffix='.edf'
+  pars.fileFormat=Core.CtSaving.EDF
+  pars.savingMode=Core.CtSaving.AutoFrame
+  saving.setParameters(pars)
+
+  # now ask for 2 sec. exposure and 10 frames
+  acq.setAcqExpoTime(2)
+  acq.setNbImages(10) 
+  
+  ct.prepareAcq()
+  ct.startAcq()
+
+  # wait for last image (#9) ready
+  lastimg = ct.getStatus().ImageCounters.LastImageReady
+  while lastimg !=9:
+    time.sleep(1)
+    lastimg = ct.getStatus().ImageCounters.LastImageReady
+ 
+  # read the first image
+  im0 = ct.ReadImage(0)
