@@ -43,7 +43,7 @@ static const char CAMERA_HIGH_TOKEN[] = "camera_high";
 static const char CAMERA_PILATUS3_TOKEN[] = "PILATUS3";
 
 static const char WATCH_PATH[] = "/lima_data";
-static const char FILE_PATTERN[] = "tmp_img_%.5d.edf";
+static const char FILE_PATTERN[] = "tmp_img_%.7d.edf";
 static const int  DECTRIS_EDF_OFFSET = 1024;
 
 /*******************************************************************
