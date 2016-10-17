@@ -49,6 +49,7 @@ public:
         SETTING_EXPOSURE_PERIOD,
         SETTING_HARDWARE_TRIGGER_DELAY,
         SETTING_EXPOSURE_PER_FRAME,
+	SETTING_ROI,
         KILL_ACQUISITION,
         RUNNING,
 	ANYCMD
@@ -128,6 +129,9 @@ public:
 
     int nbAcquiredImages() const;
     void version(int& major,int& minor,int& patch) const;
+
+    bool hasRoiCapability() const;
+    void setRoi(const std::string&);
 private:
     static const double             TIME_OUT = 10.;
 
@@ -177,6 +181,7 @@ private:
     int			    m_nb_acquired_images;
     bool		    m_has_cmd_setenergy;
     bool                    m_pilatus3_threshold_mode;
+    bool		    m_has_cmd_roi;
     int			    m_major_version;
     int                     m_minor_version;
     int                     m_patch_version;

@@ -112,6 +112,7 @@ Camera::Camera(const char *host,int port)
                     m_nb_acquired_images(0),
 		    m_has_cmd_setenergy(true),
 		    m_pilatus3_threshold_mode(false),
+		    m_has_cmd_roi(true),
 		    m_major_version(-1),
 		    m_minor_version(-1),
 		    m_patch_version(-1)
@@ -279,6 +280,8 @@ void Camera::_resync()
       send("setenergy");
     else
       send("setthreshold");
+    if(m_has_cmd_roi)
+      send("setroi 0");
     send("exptime");
     send("expperiod");
     send("nimages 1");
@@ -581,6 +584,12 @@ void Camera::_run()
 				  std::string::npos)
 			    {
 			      DEB_TRACE() << "Can't retrieved camserver version";
+			    }
+			  else if(msg.find("Unrecognized command: setroi") !=
+				  std::string::npos)
+			    {
+			      m_has_cmd_roi = false;
+			      _resync();
 			    }
 			  else
 			    {
@@ -1139,6 +1148,37 @@ void Camera::version(int& major,int& minor,int& patch) const
   major = m_major_version;
   minor = m_minor_version;
   patch = m_patch_version;
+}
+//-----------------------------------------------------
+//  ROI(S)
+//-----------------------------------------------------
+bool Camera::hasRoiCapability() const
+{
+  AutoMutex lock(m_cond.mutex());
+  return m_pilatus3_threshold_mode && m_has_cmd_roi;
+}
+void Camera::setRoi(const std::string& roi_pattern)
+{
+  DEB_MEMBER_FUNCT();
+  if(!hasRoiCapability())
+    THROW_HW_ERROR(Error) << "This detector doesn't manage hardware roi";
+
+  AutoMutex aLock(m_cond.mutex());
+  RECONNECT_WAIT_UNTIL(Camera::STANDBY,
+		       "Could not set exposure period, server not idle");
+  m_state = Camera::SETTING_ROI;
+  std::stringstream msg;
+  msg << "setroi " << roi_pattern;
+  send(msg.str());
+  // ROI can failed if it's not manage in this detector
+  while(m_state == Camera::SETTING_ROI)
+    m_cond.wait(TIME_OUT);
+  if(m_state == Camera::ERROR)
+    {
+      m_state = Camera::STANDBY;
+      THROW_HW_ERROR(Error) << "Could not set roi to:"
+			    << DEB_VAR2(roi_pattern,m_error_message);
+    }
 }
 
 //-----------------------------------------------------

@@ -19,6 +19,7 @@ namespace Pilatus
         SETTING_EXPOSURE_PERIOD,
         SETTING_HARDWARE_TRIGGER_DELAY,
         SETTING_EXPOSURE_PER_FRAME,
+        SETTING_ROI,
         KILL_ACQUISITION,
         RUNNING
       };
@@ -97,5 +98,8 @@ namespace Pilatus
 
     int nbAcquiredImages() const;
     void version(int& major /Out/,int& minor /Out/,int& patch /Out/) const;
+
+    bool hasRoiCapability() const;
+    void setRoi(const std::string&);
    };
 };

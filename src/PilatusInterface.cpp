@@ -375,6 +375,152 @@ void SyncCtrlObj::prepareAcq()
 
 }
 /*****************************************************************************
+				 ROI
+*****************************************************************************/
+static const int MODULE_WIDTH = 487;
+static const int MODULE_HEIGHT = 195;
+
+static const int MODULE_WIDTH_SPACE = 7;
+static const int MODULE_HEIGHT_SPACE = 17;
+
+RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
+  m_cam(cam),
+  m_det(det),
+  m_has_hardware_roi(det.isPilatus3())
+{
+  DEB_CONSTRUCTOR();
+  Size detImageSize;
+  det.getDetectorImageSize(detImageSize);
+
+  if(m_has_hardware_roi)
+    {
+      if(detImageSize == Size(2463,2527)) // Pilatus 6M
+	{
+	  Roi c2(2 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+		 5 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("C2",c2));
+
+	  Roi c18(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		  3 * (MODULE_HEIGHT + MODULE_HEIGHT_SPACE),
+		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+		  6 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("C18",c18));
+	}
+      else if(detImageSize == Size(1475,1679)) // Pilatus 2M
+	{
+	  Roi c2(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 3 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("C2",c2));
+
+	  Roi r8(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("R8",r8));
+
+	  Roi l8(0,
+		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("L8",l8));
+
+	  Roi c12(0,
+		  2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+		  4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("C12",c12));
+	}
+      else if(detImageSize == Size(981,1043)) // Pilatus 1M
+	{
+	  Roi r1(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 MODULE_HEIGHT);
+	  m_possible_rois.push_back(PATTERN2ROI("R1",r1));
+
+	  Roi l1(0,
+		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 MODULE_HEIGHT);
+	  m_possible_rois.push_back(PATTERN2ROI("L1",l1));
+
+	  Roi r3(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("R3",r3));
+
+	  Roi l3(0,
+		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
+		 MODULE_WIDTH,
+		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
+	  m_possible_rois.push_back(PATTERN2ROI("L3",l3));
+	}
+      else
+	m_has_hardware_roi = false;
+    }
+
+  if(!m_has_hardware_roi)
+    DEB_WARNING() << "Hardware Roi not managed for this detector";
+  
+  Roi full(Point(0,0),detImageSize);
+  m_possible_rois.push_back(PATTERN2ROI("0",full));
+  m_current_roi = full;
+}
+
+void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+  DEB_MEMBER_FUNCT();
+
+  ROIS::const_iterator i = _getRoi(set_roi);
+  if(i == m_possible_rois.end())
+    THROW_HW_ERROR(Error) << "Something weird happen";
+
+  hw_roi = i->second;
+}
+
+void RoiCtrlObj::setRoi(const Roi& set_roi)
+{
+  DEB_MEMBER_FUNCT();
+  
+  ROIS::const_iterator i;
+  if(set_roi.isActive())
+    {
+      i = _getRoi(set_roi);
+      if(i == m_possible_rois.end())
+	THROW_HW_ERROR(Error) << "Something weird happen";
+    }
+  else
+    i = --m_possible_rois.end(); // full_frame
+
+ 
+  if(m_has_hardware_roi)
+    m_cam.setRoi(i->first);
+  
+  m_current_roi = i->second;
+}
+
+void RoiCtrlObj::getRoi(Roi& hw_roi)
+{
+  hw_roi = m_current_roi;
+}
+
+inline RoiCtrlObj::ROIS::const_iterator
+RoiCtrlObj::_getRoi(const Roi& roi) const
+{
+  for(ROIS::const_iterator i = m_possible_rois.begin();
+      i != m_possible_rois.end();++i)
+    {
+      if(i->second.containsRoi(roi))
+	return i;
+    }
+  return m_possible_rois.end();
+}
+/*****************************************************************************
 			  Memory map manager
 *****************************************************************************/
 class _MmapManager : public HwBufferCtrlObj::Callback
@@ -504,8 +650,9 @@ public:
   {
     DEB_MEMBER_FUNCT();
 
-    Size current_size;
-    m_interface.m_det_info.getDetectorImageSize(current_size);
+    Roi hw_roi;
+    m_interface.m_roi.getRoi(hw_roi);
+    const Size &current_size = hw_roi.getSize();
     ImageType current_image_type;
     m_interface.m_det_info.getCurrImageType(current_image_type);
     
@@ -532,7 +679,8 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
                 m_buffer(WATCH_PATH,FILE_PATTERN,
 			 *m_buffer_cbk),
                 m_sync(cam,m_det_info),
-		m_saving(cam)
+		m_saving(cam),
+		m_roi(cam,m_det_info)
 {
     DEB_CONSTRUCTOR();
 
@@ -547,6 +695,9 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
 
     HwSavingCtrlObj *saving = &m_saving;
     m_cap_list.push_back(HwCap(saving));
+
+    HwRoiCtrlObj *roi = &m_roi;
+    m_cap_list.push_back(HwCap(roi));
 
     m_buffer.getDirectoryEvent().watch_moved_to();
 

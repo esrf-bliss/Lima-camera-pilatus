@@ -22,6 +22,8 @@
 #ifndef PILATUSINTERFACE_H
 #define PILATUSINTERFACE_H
 
+#include <vector>
+
 #include "lima/HwInterface.h"
 #include "lima/HwFileEventMgr.h"
 #include "lima/Debug.h"
@@ -118,7 +120,32 @@ private:
 	double m_exposure_requested;
 	double m_latency;
 };
+/*******************************************************************
+ * \class RoiCtrlOb
+ * \brief Control object providing Pilatus hardware roi
+ *******************************************************************/
 
+class RoiCtrlObj : public HwRoiCtrlObj
+{
+  DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "Pilatus");
+ public:
+  RoiCtrlObj(Camera& cam,DetInfoCtrlObj&);
+
+  virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+  virtual void setRoi(const Roi& set_roi);
+  virtual void getRoi(Roi& hw_roi);
+private:
+  typedef std::pair<const char*,Roi> PATTERN2ROI;
+  typedef std::vector<PATTERN2ROI> ROIS;
+
+  inline ROIS::const_iterator _getRoi(const Roi& roi) const;
+
+  Camera&			m_cam;
+  DetInfoCtrlObj&		m_det;
+  bool				m_has_hardware_roi;
+  ROIS				m_possible_rois;
+  Roi				m_current_roi;
+};
 /*******************************************************************
  * \class Interface
  * \brief Pilatus hardware interface
@@ -163,6 +190,7 @@ private:
 	HwTmpfsBufferMgr m_buffer;
 	SyncCtrlObj m_sync;
 	SavingCtrlObj m_saving;
+        RoiCtrlObj m_roi;
 };
 
 } // namespace Pilatus
