@@ -74,6 +74,7 @@ public:
 	}
 	;
 
+
 	double getMinLatTime() const;
 	bool isPilatus3() const {return m_is_pilatus3;}
 private:
@@ -147,6 +148,9 @@ public:
 	int getThreshold(void);
 	Camera::Gain getGain(void);
 	void sendAnyCommand(const std::string& str);
+
+	virtual bool firstProcessingInPlace() const 
+	{return false;}
 
 private:
 	class _BufferCallback;
