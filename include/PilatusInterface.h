@@ -83,6 +83,44 @@ private:
 	Info	m_info;
         bool    m_is_pilatus3;
 };
+
+/*******************************************************************
+ * \class RoiCtrlOb
+ * \brief Control object providing Pilatus hardware roi
+ *******************************************************************/
+
+class RoiCtrlObj : public HwRoiCtrlObj
+{
+  DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "Pilatus");
+ public:
+  RoiCtrlObj(Camera& cam,DetInfoCtrlObj&);
+
+  virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+  virtual void setRoi(const Roi& set_roi);
+  virtual void getRoi(Roi& hw_roi);
+
+  int getMaxFrequency() const {return m_current_max_frequency;}
+private:
+  struct Pattern
+  {
+    Pattern(const char* p,int f) : pattern(p),max_frequency(f) {}
+
+    const char* pattern;
+    int         max_frequency;
+  };
+  typedef std::pair<Pattern,Roi> PATTERN2ROI;
+  typedef std::vector<PATTERN2ROI> ROIS;
+
+  inline ROIS::const_iterator _getRoi(const Roi& roi) const;
+
+  Camera&			m_cam;
+  DetInfoCtrlObj&		m_det;
+  bool				m_has_hardware_roi;
+  ROIS				m_possible_rois;
+  Roi				m_current_roi;
+  int				m_current_max_frequency;
+};
+
 /*******************************************************************
  * \class SyncCtrlObj
  * \brief Control object providing Pilatus synchronization interface
@@ -94,7 +132,7 @@ DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Pilatus");
 
 public:
 
- SyncCtrlObj(Camera& cam,DetInfoCtrlObj&);
+        SyncCtrlObj(Camera& cam,DetInfoCtrlObj&,RoiCtrlObj&);
 	virtual ~SyncCtrlObj();
 
 	virtual bool checkTrigMode(TrigMode trig_mode);
@@ -116,36 +154,13 @@ public:
 	
 private:
 	Camera& m_cam;
+	DetInfoCtrlObj& m_det_info;
+	RoiCtrlObj& m_roi;
 	int m_nb_frames;
 	double m_exposure_requested;
 	double m_latency;
 };
-/*******************************************************************
- * \class RoiCtrlOb
- * \brief Control object providing Pilatus hardware roi
- *******************************************************************/
 
-class RoiCtrlObj : public HwRoiCtrlObj
-{
-  DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "Pilatus");
- public:
-  RoiCtrlObj(Camera& cam,DetInfoCtrlObj&);
-
-  virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
-  virtual void setRoi(const Roi& set_roi);
-  virtual void getRoi(Roi& hw_roi);
-private:
-  typedef std::pair<const char*,Roi> PATTERN2ROI;
-  typedef std::vector<PATTERN2ROI> ROIS;
-
-  inline ROIS::const_iterator _getRoi(const Roi& roi) const;
-
-  Camera&			m_cam;
-  DetInfoCtrlObj&		m_det;
-  bool				m_has_hardware_roi;
-  ROIS				m_possible_rois;
-  Roi				m_current_roi;
-};
 /*******************************************************************
  * \class Interface
  * \brief Pilatus hardware interface
@@ -188,9 +203,9 @@ private:
 	DetInfoCtrlObj m_det_info;
 	_BufferCallback* m_buffer_cbk;
 	HwTmpfsBufferMgr m_buffer;
+        RoiCtrlObj m_roi;
 	SyncCtrlObj m_sync;
 	SavingCtrlObj m_saving;
-        RoiCtrlObj m_roi;
 };
 
 } // namespace Pilatus

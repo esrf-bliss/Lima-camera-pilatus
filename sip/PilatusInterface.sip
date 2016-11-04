@@ -39,7 +39,7 @@ namespace Pilatus
 %End
   public:
 
-    SyncCtrlObj(Pilatus::Camera& cam,Pilatus::DetInfoCtrlObj&);
+    SyncCtrlObj(Pilatus::Camera& cam,Pilatus::DetInfoCtrlObj&,Pilatus::RoiCtrlObj&);
     virtual ~SyncCtrlObj();
 
     virtual bool checkTrigMode(TrigMode trig_mode);
@@ -87,6 +87,21 @@ namespace Pilatus
     int getThreshold();
     Pilatus::Camera::Gain getGain();
     void sendAnyCommand(const std::string& str);
+  };
+
+  class RoiCtrlObj : HwRoiCtrlObj
+  {
+%TypeHeaderCode
+#include <PilatusInterface.h>
+%End
+   public:
+    RoiCtrlObj(Pilatus::Camera& cam,Pilatus::DetInfoCtrlObj&);
+
+    virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+    virtual void setRoi(const Roi& set_roi);
+    virtual void getRoi(Roi& hw_roi);
+
+    int getMaxFrequency() const;
   };
 
 }; // namespace Pilatus

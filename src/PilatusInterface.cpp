@@ -210,9 +210,13 @@ double DetInfoCtrlObj::getMinLatTime() const
  * \brief SyncCtrlObj constructor
  *******************************************************************/
 
-SyncCtrlObj::SyncCtrlObj(Camera& cam,DetInfoCtrlObj &det_info)
-  :  m_cam(cam),m_latency(det_info.getMinLatTime())
-
+SyncCtrlObj::SyncCtrlObj(Camera& cam,
+			 DetInfoCtrlObj &det_info,
+			 RoiCtrlObj &roi) :
+  m_cam(cam),
+  m_det_info(det_info),
+  m_roi(roi),
+  m_latency(det_info.getMinLatTime())
 {
 }
 
@@ -362,14 +366,25 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 //-----------------------------------------------------
 void SyncCtrlObj::prepareAcq()
 {
+    TrigMode trig_mode;
+    getTrigMode(trig_mode);
 
     double exposure =  m_exposure_requested;
     double exposure_period = exposure + m_latency;
 
+    if(m_det_info.isPilatus3() && 
+       (trig_mode == ExtGate || trig_mode == ExtTrigMult))
+      {
+	int max_frequency = m_roi.getMaxFrequency();
+	if(max_frequency > 0)
+	  {
+	    double min_exposure_period = 1./max_frequency;
+	    if(exposure_period < min_exposure_period)
+	      exposure_period = min_exposure_period;
+	  }
+      }
     m_cam.setExposurePeriod(exposure_period);
-
-    TrigMode trig_mode;
-    getTrigMode(trig_mode);
+	
     int nb_frames = (trig_mode == IntTrigMult)?1:m_nb_frames;
     m_cam.setNbImagesInSequence(nb_frames);
 
@@ -392,73 +407,81 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
   Size detImageSize;
   det.getDetectorImageSize(detImageSize);
 
+  int fullframe_max_frequency = -1;
+
   if(m_has_hardware_roi)
     {
       if(detImageSize == Size(2463,2527)) // Pilatus 6M
 	{
+	  fullframe_max_frequency = 100;
+
 	  Roi c2(2 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
 		 5 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("C2",c2));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",500),c2));
 
 	  Roi c18(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		  3 * (MODULE_HEIGHT + MODULE_HEIGHT_SPACE),
 		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
 		  6 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("C18",c18));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C18",200),c18));
 	}
       else if(detImageSize == Size(1475,1679)) // Pilatus 2M
 	{
+	  fullframe_max_frequency = 250;
+
 	  Roi c2(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 3 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("C2",c2));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",500),c2));
 
 	  Roi r8(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("R8",r8));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R8",500),r8));
 
 	  Roi l8(0,
 		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("L8",l8));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L8",500),l8));
 
 	  Roi c12(0,
 		  2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
 		  4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("C12",c12));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C12",250),c12));
 	}
       else if(detImageSize == Size(981,1043)) // Pilatus 1M
 	{
+	  fullframe_max_frequency = 500;
+	  
 	  Roi r1(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 MODULE_HEIGHT);
-	  m_possible_rois.push_back(PATTERN2ROI("R1",r1));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R1",500),r1));
 
 	  Roi l1(0,
 		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 MODULE_HEIGHT);
-	  m_possible_rois.push_back(PATTERN2ROI("L1",l1));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L1",500),l1));
 
 	  Roi r3(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("R3",r3));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R3",500),r3));
 
 	  Roi l3(0,
 		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
 		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI("L3",l3));
+	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L3",500),l3));
 	}
       else
 	m_has_hardware_roi = false;
@@ -468,8 +491,9 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
     DEB_WARNING() << "Hardware Roi not managed for this detector";
   
   Roi full(Point(0,0),detImageSize);
-  m_possible_rois.push_back(PATTERN2ROI("0",full));
+  m_possible_rois.push_back(PATTERN2ROI(Pattern("0",fullframe_max_frequency),full));
   m_current_roi = full;
+  m_current_max_frequency = fullframe_max_frequency;
 }
 
 void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
@@ -499,9 +523,10 @@ void RoiCtrlObj::setRoi(const Roi& set_roi)
 
  
   if(m_has_hardware_roi)
-    m_cam.setRoi(i->first);
+    m_cam.setRoi(i->first.pattern);
   
   m_current_roi = i->second;
+  m_current_max_frequency = i->first.max_frequency;
 }
 
 void RoiCtrlObj::getRoi(Roi& hw_roi)
@@ -678,9 +703,9 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
 		m_buffer_cbk(new Interface::_BufferCallback(*this)),
                 m_buffer(WATCH_PATH,FILE_PATTERN,
 			 *m_buffer_cbk),
-                m_sync(cam,m_det_info),
-		m_saving(cam),
-		m_roi(cam,m_det_info)
+		m_roi(cam,m_det_info),
+                m_sync(cam,m_det_info,m_roi),
+		m_saving(cam)
 {
     DEB_CONSTRUCTOR();
 
