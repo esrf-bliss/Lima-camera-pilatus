@@ -1039,13 +1039,6 @@ void Camera::startAcquisition(int image_number)
 
     send(msg.str());
     m_cond.wait(TIME_OUT);
-    if(m_pilatus3_threshold_mode)
-      {
-	if(m_trigger_mode != Camera::INTERNAL_SINGLE && 
-	   m_trigger_mode != Camera::INTERNAL_MULTI)
-	  m_cond.wait(1.);	// Ugly fix for external synchro
-      }
-
 }
 
 //-----------------------------------------------------
