@@ -620,6 +620,7 @@ public:
 
     m_interface.m_cam.setImgpath(params.watch_path);
     m_interface.m_cam.setFileName(params.file_pattern);
+    m_image_events.clear();
   }
 
   virtual bool getFrameInfo(int image_number,const char* full_path,
@@ -627,6 +628,8 @@ public:
 			    HwFrameInfoType &frame_info)
   {
     DEB_MEMBER_FUNCT();
+
+    m_image_events.insert(image_number);
 
     FrameDim anImageDim;
     getFrameDim(anImageDim);
@@ -667,8 +670,8 @@ public:
 	aReturnFlag = false;
       }
     else
-      aReturnFlag = (image_number + 1) != m_interface.m_cam.nbImagesInSequence();
-
+      aReturnFlag = int(m_image_events.size()) != m_interface.m_cam.nbImagesInSequence();
+    
     return aReturnFlag;
   }
   virtual void getFrameDim(FrameDim& frame_dim)
@@ -691,6 +694,7 @@ public:
 private:
   Interface&	m_interface;
   _MmapManager	m_mmap_manager;
+  std::set<long>		m_image_events;
 };
 
 /*******************************************************************
