@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <errno.h>
 #include "lima/Debug.h"
 #include "PilatusInterface.h"
 
@@ -643,7 +644,7 @@ public:
 	else
 	  {
 	    m_interface.m_cam.errorStopAcquisition();
-	    THROW_HW_ERROR(Error) << "Can't open file:" << DEB_VAR1(full_path);
+	    THROW_HW_ERROR(Error) << strerror(errno) << DEB_VAR1(full_path);
 	  }
       }
     void* mmap_mem_base = mmap(NULL,DECTRIS_EDF_OFFSET + memSize,
