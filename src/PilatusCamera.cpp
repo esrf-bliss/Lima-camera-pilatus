@@ -36,6 +36,7 @@
 #include <netdb.h>
 
 #include <poll.h>
+#include <unistd.h>
 
 #include "lima/Exceptions.h"
 

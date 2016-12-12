@@ -26,6 +26,7 @@
 #include <sys/statvfs.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #include "lima/Debug.h"
 #include "PilatusInterface.h"
 
@@ -441,7 +442,7 @@ class Interface::_BufferCallback : public HwTmpfsBufferMgr::Callback
   DEB_CLASS_NAMESPC(DebModCamera, "_BufferCallback", "Pilatus");
 public:
   _BufferCallback(Interface& hwInterface) : m_interface(hwInterface) {}
-
+  virtual ~_BufferCallback() {}
   virtual void prepare(const DirectoryEvent::Parameters &params)
   {
     DEB_MEMBER_FUNCT();
