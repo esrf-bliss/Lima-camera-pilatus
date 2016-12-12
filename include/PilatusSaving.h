@@ -39,7 +39,7 @@ namespace lima
       
       virtual void getPossibleSaveFormat(std::list<std::string> &format_list) const;
 
-      virtual void readFrame(HwFrameInfoType&,int frame_nr);
+      virtual void readFrame(HwFrameInfoType&,int frame_nr, int stream_idx=0);
 
       virtual void setCommonHeader(const HeaderMap&);
     private:

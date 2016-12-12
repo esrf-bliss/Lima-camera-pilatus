@@ -43,7 +43,8 @@ void SavingCtrlObj::getPossibleSaveFormat(std::list<std::string> &format_list) c
   format_list.push_back(HwSavingCtrlObj::CBF_FORMAT_STR);
 }
 
-void SavingCtrlObj::readFrame(HwFrameInfoType &frame_info,int frame_nr)
+void SavingCtrlObj::readFrame(HwFrameInfoType &frame_info,int frame_nr,
+			      int)
 {
   DEB_MEMBER_FUNCT();
   FrameDim anImageDim;
