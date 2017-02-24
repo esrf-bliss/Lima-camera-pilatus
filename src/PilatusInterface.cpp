@@ -630,8 +630,6 @@ public:
   {
     DEB_MEMBER_FUNCT();
 
-    m_image_events.insert(image_number);
-
     FrameDim anImageDim;
     getFrameDim(anImageDim);
     long memSize = anImageDim.getMemSize();
@@ -657,7 +655,10 @@ public:
 	m_interface.m_cam.errorStopAcquisition();
 	THROW_HW_ERROR(Error) << "Problem to read image:" << DEB_VAR1(full_path);
       }
-    
+
+    if(from != HwFileEventCallbackHelper::OnDemand)
+      m_image_events.insert(image_number);
+
     void* aDataBuffer = (char*)mmap_mem_base + DECTRIS_EDF_OFFSET;
     frame_info = HwFrameInfoType(image_number,aDataBuffer,&anImageDim,
 				 Timestamp(),0,
