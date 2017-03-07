@@ -146,6 +146,7 @@ private:
     void         _initVariable();
     void         _resync();
     void         _reinit();
+    void	 _pilatus2model();
     void	 _pilatus3model(); ///< set pilatus3 threshold extention
     void         _work_around_threshold_bug();
 
@@ -180,6 +181,7 @@ private:
     std::string             m_file_pattern;    
     int			    m_nb_acquired_images;
     bool		    m_has_cmd_setenergy;
+    bool                    m_pilatus2_model;
     bool                    m_pilatus3_threshold_mode;
     bool		    m_has_cmd_roi;
     int			    m_major_version;

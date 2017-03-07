@@ -111,6 +111,7 @@ Camera::Camera(const char *host,int port)
                     m_state(DISCONNECTED),
                     m_nb_acquired_images(0),
 		    m_has_cmd_setenergy(true),
+		    m_pilatus2_model(false),
 		    m_pilatus3_threshold_mode(false),
 		    m_has_cmd_roi(true),
 		    m_major_version(-1),
@@ -302,6 +303,13 @@ void Camera::_reinit()
 {
     _resync();
     send("nimages");
+}
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_pilatus2model()
+{
+  m_pilatus2_model = true;
 }
 //-----------------------------------------------------
 //
@@ -531,7 +539,12 @@ void Camera::_run()
                             }
 			    if(m_state != Camera::RUNNING)
 			      m_state = Camera::STANDBY;
-                        }
+                        }// Fixes message from camserver tvx-7.3.13-121212 version
+                        else if(msg.substr(0,10) == "15 ERR ROI" && m_pilatus2_model)
+			  {
+			      DEB_TRACE() << "-- setROI process succeeded";
+			      m_state = Camera::STANDBY;
+			  }
                         else  // ERROR MESSAGE
                         {
 			  m_error_message = msg.substr(7);
@@ -1148,7 +1161,7 @@ void Camera::version(int& major,int& minor,int& patch) const
 bool Camera::hasRoiCapability() const
 {
   AutoMutex lock(m_cond.mutex());
-  return m_pilatus3_threshold_mode && m_has_cmd_roi;
+  return m_has_cmd_roi;
 }
 void Camera::setRoi(const std::string& roi_pattern)
 {
