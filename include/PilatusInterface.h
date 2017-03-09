@@ -78,9 +78,11 @@ public:
 
 
 	double getMinLatTime() const;
+	bool isPilatus2() const {return m_is_pilatus2;}
 	bool isPilatus3() const {return m_is_pilatus3;}
 private:
 	Info	m_info;
+        bool    m_is_pilatus2;
         bool    m_is_pilatus3;
 };
 

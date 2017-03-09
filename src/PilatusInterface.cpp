@@ -46,6 +46,12 @@ static const char WATCH_PATH[] = "/lima_data";
 static const char FILE_PATTERN[] = "tmp_img_%.7d.edf";
 static const int  DECTRIS_EDF_OFFSET = 1024;
 
+static const float P2_6M_MAX_FREQUENCY[3] = {12, 40, 100}; //full, c18, c2
+static const float P3_6M_MAX_FREQUENCY[3] = {100, 200, 500}; //full, c18, c2
+
+
+
+
 /*******************************************************************
  * \brief DetInfoCtrlObj constructor
  * \param info if info is NULL look for ~det/p2_det/config/cam_data/camera.def file
@@ -87,6 +93,10 @@ DetInfoCtrlObj::DetInfoCtrlObj(const DetInfoCtrlObj::Info* info)
 		m_info.m_det_model = aBeginPt;
 		//Check if pilatus2 or 3
 		m_is_pilatus3 = !strncmp(aBeginPt,CAMERA_PILATUS3_TOKEN,sizeof(CAMERA_PILATUS3_TOKEN) - 1);
+		m_is_pilatus2 = !m_is_pilatus3;
+                DEB_PARAM() << DEB_VAR1(m_is_pilatus2);
+                DEB_PARAM() << DEB_VAR1(m_is_pilatus3);
+
 	      }
 	    else if(!strncmp(aReadBuffer,
 			     CAMERA_HIGH_TOKEN,sizeof(CAMERA_HIGH_TOKEN) - 1))
@@ -402,95 +412,111 @@ static const int MODULE_HEIGHT_SPACE = 17;
 RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
   m_cam(cam),
   m_det(det),
-  m_has_hardware_roi(det.isPilatus3())
+  m_has_hardware_roi(true)
 {
   DEB_CONSTRUCTOR();
   Size detImageSize;
   det.getDetectorImageSize(detImageSize);
 
   int fullframe_max_frequency = -1;
+  int c18_max_frequency = -1;
+  int c2_max_frequency = -1;
 
-  if(m_has_hardware_roi)
+  if(detImageSize == Size(2463,2527)) // Pilatus 6M
     {
-      if(detImageSize == Size(2463,2527)) // Pilatus 6M
+      if(det.isPilatus2())
 	{
-	  fullframe_max_frequency = 100;
-
-	  Roi c2(2 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
-		 5 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",500),c2));
-
-	  Roi c18(MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		  3 * (MODULE_HEIGHT + MODULE_HEIGHT_SPACE),
-		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
-		  6 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C18",200),c18));
-	}
-      else if(detImageSize == Size(1475,1679)) // Pilatus 2M
-	{
-	  fullframe_max_frequency = 250;
-
-	  Roi c2(MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 3 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",500),c2));
-
-	  Roi r8(MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
-		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R8",500),r8));
-
-	  Roi l8(0,
-		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
-		 2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L8",500),l8));
-
-	  Roi c12(0,
-		  2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
-		  3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
-		  4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("C12",250),c12));
-	}
-      else if(detImageSize == Size(981,1043)) // Pilatus 1M
-	{
-	  fullframe_max_frequency = 500;
-	  
-	  Roi r1(MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 MODULE_HEIGHT);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R1",500),r1));
-
-	  Roi l1(0,
-		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 MODULE_HEIGHT);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L1",500),l1));
-
-	  Roi r3(MODULE_WIDTH + MODULE_WIDTH_SPACE,
-		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("R3",500),r3));
-
-	  Roi l3(0,
-		 MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
-		 MODULE_WIDTH,
-		 3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
-	  m_possible_rois.push_back(PATTERN2ROI(Pattern("L3",500),l3));
+	  fullframe_max_frequency = P2_6M_MAX_FREQUENCY[0];
+	  c18_max_frequency = P2_6M_MAX_FREQUENCY[1];
+	  c2_max_frequency = P2_6M_MAX_FREQUENCY[2];
 	}
       else
-	m_has_hardware_roi = false;
+	{
+	  fullframe_max_frequency = P3_6M_MAX_FREQUENCY[0];
+	  c18_max_frequency = P3_6M_MAX_FREQUENCY[1];
+	  c2_max_frequency = P3_6M_MAX_FREQUENCY[2];
+	}
+
+      DEB_PARAM() << DEB_VAR1(fullframe_max_frequency);
+      DEB_PARAM() << DEB_VAR1(c18_max_frequency);
+      DEB_PARAM() << DEB_VAR1(c2_max_frequency);
+
+      Roi c2(2 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+	     5 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",c2_max_frequency),c2));
+
+      Roi c18(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	      3 * (MODULE_HEIGHT + MODULE_HEIGHT_SPACE),
+	      3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+	      6 * MODULE_HEIGHT + 5 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("C18",c18_max_frequency),c18));
     }
+  else if(detImageSize == Size(1475,1679) && det.isPilatus3()) // Pilatus 2M
+    {
+
+      fullframe_max_frequency = 250;
+
+      Roi c2(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     3 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     2 * MODULE_HEIGHT + MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("C2",500),c2));
+
+      Roi r8(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+	     2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("R8",500),r8));
+
+      Roi l8(0,
+	     2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+	     2 * MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("L8",500),l8));
+
+      Roi c12(0,
+	      2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+	      3 * MODULE_WIDTH + 2 * MODULE_WIDTH_SPACE,
+	      4 * MODULE_HEIGHT + 3 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("C12",250),c12));
+    }
+  else if(detImageSize == Size(981,1043) && det.isPilatus3()) // Pilatus 1M
+    {
+
+      fullframe_max_frequency = 500;
+
+      Roi r1(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     MODULE_HEIGHT);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("R1",500),r1));
+
+      Roi l1(0,
+	     2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     MODULE_HEIGHT);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("L1",500),l1));
+
+      Roi r3(MODULE_WIDTH + MODULE_WIDTH_SPACE,
+	     MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("R3",500),r3));
+
+      Roi l3(0,
+	     MODULE_HEIGHT + MODULE_HEIGHT_SPACE,
+	     MODULE_WIDTH,
+	     3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
+      m_possible_rois.push_back(PATTERN2ROI(Pattern("L3",500),l3));
+    }
+  else
+    m_has_hardware_roi = false;
 
   if(!m_has_hardware_roi)
     DEB_WARNING() << "Hardware Roi not managed for this detector";
-  
+
   Roi full(Point(0,0),detImageSize);
   m_possible_rois.push_back(PATTERN2ROI(Pattern("0",fullframe_max_frequency),full));
   m_current_roi = full;
@@ -733,6 +759,7 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
     m_buffer.getDirectoryEvent().watch_moved_to();
 
     //Activate new pilatus3 threshold method
+    if(m_det_info.isPilatus2()) cam._pilatus2model();
     if(m_det_info.isPilatus3()) cam._pilatus3model();
 }
 
