@@ -21,35 +21,33 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
+set(NAME "pilatus")
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
 
-set(pilatus_srcs src/PilatusCamera.cpp  src/PilatusInterface.cpp
+set(${NAME}_srcs src/PilatusCamera.cpp  src/PilatusInterface.cpp
 	 src/PilatusSaving.cpp)
 	 
-file(STRINGS "VERSION" pilatus_vers)
-add_library(limapilatus SHARED ${pilatus_srcs})
+add_library(lima${NAME} SHARED ${${NAME}_srcs})
 
 #INCLUDES
-target_include_directories(limapilatus PUBLIC "${CMAKE_SOURCE_DIR}/third-party/CBFLib/include")
-target_include_directories(limapilatus PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(lima${NAME} PUBLIC "${CMAKE_SOURCE_DIR}/third-party/CBFLib/include")
+target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 #LIBRARIES
-find_library(PILATUS_LIB cbf)
-if("${PILATUS_LIB}" STREQUAL "PILATUS_LIB-NOTFOUND")
-  message(FATAL_ERROR "pilatus : libcbf not found, you can search it in cmake-gui or try to install it if it isn't here.")
+find_library(PILATUS_CBF_LIB cbf)
+if("${PILATUS_CBF_LIB}" STREQUAL "PILATUS_CBF_LIB-NOTFOUND")
+  message(FATAL_ERROR "${NAME} : libcbf not found, you can search it in cmake-gui or try to install it if it isn't here.")
 endif()
 
 
-target_link_libraries(limapilatus limacore)
-target_link_libraries(limapilatus ${PILATUS_LIB})
+target_link_libraries(lima${NAME} limacore)
+target_link_libraries(lima${NAME} ${PILATUS_CBF_LIB})
 
-set_target_properties(limapilatus PROPERTIES VERSION ${pilatus_vers} SOVERSION "1")
+include(CameraVERSION)
+install(TARGETS lima${NAME} LIBRARY DESTINATION lib)
 
-install(TARGETS limapilatus LIBRARY DESTINATION lib)
-
-if(COMPILE_SIP)
-    set(NAME "pilatus")
+if(LIMA_ENABLE_PYTHON)
     include(CameraRunSIP)
     install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Pilatus")
 endif()
