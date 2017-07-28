@@ -31,7 +31,6 @@ set(${NAME}_srcs src/PilatusCamera.cpp  src/PilatusInterface.cpp
 add_library(lima${NAME} SHARED ${${NAME}_srcs})
 
 #INCLUDES
-target_include_directories(lima${NAME} PUBLIC "${CMAKE_SOURCE_DIR}/third-party/CBFLib/include")
 target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 #LIBRARIES
