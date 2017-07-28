@@ -28,7 +28,7 @@ test :
   script:
     - cd ..
     - cp -R lima-camera-pilatus/lima .
-    - cd lima/cmake-build/
+    - cd lima/build/
     - ctest --timeout 10
   only:
     - cmake
