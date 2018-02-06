@@ -574,12 +574,17 @@ void Camera::_run()
                             m_state = Camera::STANDBY;
                             m_nb_acquired_images = m_nimages;
                         }
+			else if(m_state == Camera::STANDBY)
+			{
+			    // The acquisition was aborted
+			    DEB_TRACE() << "-- Ignore ERROR";
+			}
                         else
                         {
-                            DEB_TRACE() << "-- ERROR";                      
-                            m_state = Camera::ERROR;
-                            msg = msg.substr(2);
-                            m_error_message = msg.substr(msg.find(" "));
+			    DEB_TRACE() << "-- ERROR";                      
+			    m_state = Camera::ERROR;
+			    msg = msg.substr(2);
+			    m_error_message = msg.substr(msg.find(" "));
                         }
                     }
                     else if(msg.substr(0,2) == "1 ")
@@ -1063,7 +1068,7 @@ void Camera::stopAcquisition()
     if(m_state == Camera::RUNNING)
     {
         m_state = Camera::KILL_ACQUISITION;
-        send("k");
+        send("camcmd k");
     }
 }
 
