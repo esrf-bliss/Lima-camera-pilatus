@@ -514,6 +514,9 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
   else
     m_has_hardware_roi = false;
 
+  if(cam.hasRoiCapability() == false)
+    m_has_hardware_roi = false;
+
   if(!m_has_hardware_roi)
     DEB_WARNING() << "Hardware Roi not managed for this detector";
 
@@ -753,8 +756,12 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
     HwSavingCtrlObj *saving = &m_saving;
     m_cap_list.push_back(HwCap(saving));
 
-    HwRoiCtrlObj *roi = &m_roi;
-    m_cap_list.push_back(HwCap(roi));
+    if (cam.hasRoiCapability() == true)
+      {
+	DEB_TRACE() << "Has hardware ROI capability";
+	HwRoiCtrlObj *roi = &m_roi;
+	m_cap_list.push_back(HwCap(roi));
+      }
 
     m_buffer.getDirectoryEvent().watch_moved_to();
 
