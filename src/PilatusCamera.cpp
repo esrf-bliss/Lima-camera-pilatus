@@ -116,7 +116,9 @@ Camera::Camera(const char *host,int port)
 		    m_has_cmd_roi(true),
 		    m_major_version(-1),
 		    m_minor_version(-1),
-		    m_patch_version(-1)
+		    m_patch_version(-1),
+		    m_cmd_setenergy_get_reply(false),
+		    m_cmd_roi_get_reply(false)
 {
     DEB_CONSTRUCTOR();
     m_server_ip         = host;
@@ -228,6 +230,7 @@ void Camera::connect(const char *host,int port)
   AutoMutex aLock(m_cond.mutex());
   _initVariable();
   _connect(host,port);
+  _wait_checkcmd();
 }
 
 void Camera::_connect(const char *host,int port)
@@ -296,6 +299,18 @@ void Camera::_resync()
     send("version");
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_wait_checkcmd()
+{
+  while(!m_cmd_setenergy_get_reply ||
+	!m_cmd_roi_get_reply)
+    {
+      if(!m_cond.wait(2.))
+	break;			// should we raise something?
+    }
+}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -476,6 +491,7 @@ void Camera::_run()
 				}
 			      else
 				m_energy = atoi(real_message.substr(columnPos + 1).c_str());
+			      m_cmd_setenergy_get_reply = true;
 			    }
                             if((position = real_message.find("Settings:")) !=
 			       std::string::npos) // Threshold and gain is already set,read them
@@ -495,7 +511,8 @@ void Camera::_run()
                                 std::string &gain_value = gain_split[0];
                                 std::map<std::string,Gain>::iterator gFind = GAIN_SERVER_RESPONSE.find(gain_value);
                                 m_gain = gFind->second;
-                                m_state = Camera::STANDBY;                               
+                                m_state = Camera::STANDBY;
+				m_cmd_setenergy_get_reply = true
                             }
                             else if(real_message.find("/tmp/setthreshold")!=std::string::npos)
                             {
@@ -537,6 +554,9 @@ void Camera::_run()
                                 int columnPos = real_message.find(":");
                                 m_nimages = atoi(real_message.substr(columnPos+1).c_str());
                             }
+			    else if(real_message.find("ROI")!=std::string::npos)
+			      m_cmd_roi_get_reply = true;
+			    
 			    if(m_state != Camera::RUNNING)
 			      m_state = Camera::STANDBY;
                         }// Fixes message from camserver tvx-7.3.13-121212 version
@@ -591,6 +611,7 @@ void Camera::_run()
 			     std::string::npos)
 			    {
 			      m_has_cmd_setenergy = false;
+			      m_cmd_setenergy_get_reply = true;
 			      _resync();
 			    }
 			  else if(msg.find("Unrecognized command: version") != 
@@ -602,6 +623,7 @@ void Camera::_run()
 				  std::string::npos)
 			    {
 			      m_has_cmd_roi = false;
+			      m_cmd_roi_get_reply = true;
 			      _resync();
 			    }
 			  else
@@ -611,6 +633,7 @@ void Camera::_run()
                             DEB_TRACE() << m_error_message;
                             m_state = Camera::ERROR;
 			    }
+			  m_cond.broadcast();
                         }
                     }
                     else if(msg.substr(0,2) == "10")

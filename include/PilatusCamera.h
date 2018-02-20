@@ -149,7 +149,8 @@ private:
     void	 _pilatus2model();
     void	 _pilatus3model(); ///< set pilatus3 threshold extention
     void         _work_around_threshold_bug();
-
+    void         _wait_checkcmd();
+    
     std::map<std::string,Gain>    GAIN_SERVER_RESPONSE;
     std::map<Gain,std::string>    GAIN_VALUE2SERVER;
 
@@ -187,6 +188,8 @@ private:
     int			    m_major_version;
     int                     m_minor_version;
     int                     m_patch_version;
+    bool                    m_cmd_setenergy_get_reply;
+    bool                    m_cmd_roi_get_reply;
 };
 }
 }
