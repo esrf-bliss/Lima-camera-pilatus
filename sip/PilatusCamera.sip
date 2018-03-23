@@ -21,7 +21,8 @@ namespace Pilatus
         SETTING_EXPOSURE_PER_FRAME,
         SETTING_ROI,
         KILL_ACQUISITION,
-        RUNNING
+        RUNNING,
+	RESET_HIGH_VOLTAGE
       };
 
     enum Gain
@@ -101,5 +102,8 @@ namespace Pilatus
 
     bool hasRoiCapability() const;
     void setRoi(const std::string&);
+
+    bool hasHighVoltageReset();
+    void resetHighVoltage(double sleeptime = -1.);
    };
 };
