@@ -1206,13 +1206,14 @@ bool Camera::hasHighVoltageReset()
     {
       if(m_cmd_high_voltage_reset == NOT_INITIALIZED)
 	{
+          lock.unlock();
 	  try
 	    {
-	      AutoMutexUnlock unlock(lock);
 	      resetHighVoltage();
 	    }
 	  catch(...)
 	    {}
+	  lock.lock();
 	}
       return m_cmd_high_voltage_reset == HAS_HIGH_VOLTAGE;
     }
