@@ -1231,12 +1231,28 @@ void Camera::resetHighVoltage(unsigned int sleep_time)
   msg << "resetmodulepower";
   if(sleep_time > 0.) msg << " " << sleep_time;
   m_state = Camera::RESET_HIGH_VOLTAGE;
+  send(msg.str());
+
+  m_cond.wait(sleep_time);
   while(m_state == Camera::RESET_HIGH_VOLTAGE)
-    m_cond.wait(TIME_OUT + sleep_time < 0. ? 0. : sleep_time);
+    {
+      m_cond.wait(TIME_OUT);
+    }
 
   if(m_cmd_high_voltage_reset == DONT_HAVE_HIGH_VOLTAGE)
-    THROW_HW_ERROR(Error) << "This detector doesn't have a "
-			  << "command to reset high voltage";
+    {
+      THROW_HW_ERROR(Error) << "This detector doesn't have a "
+			    << "command to reset high voltage";
+    }
+  else
+    {
+      m_cmd_high_voltage_reset = HAS_HIGH_VOLTAGE;
+    }
+  if(m_state == Camera::ERROR)
+    {
+      m_state = Camera::STANDBY;
+      THROW_HW_ERROR(Error) << "Could not reset high voltage";
+    }
   else
     {
       /** Refresh the energy settings.
