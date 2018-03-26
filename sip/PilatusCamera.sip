@@ -104,6 +104,6 @@ namespace Pilatus
     void setRoi(const std::string&);
 
     bool hasHighVoltageReset();
-    void resetHighVoltage(double sleeptime = -1.);
+    void resetHighVoltage(unsigned int sleeptime = 1);
    };
 };

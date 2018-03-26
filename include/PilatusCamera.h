@@ -135,7 +135,7 @@ public:
     void setRoi(const std::string&);
 
     bool hasHighVoltageReset();
-    void resetHighVoltage(double sleeptime = -1.);
+    void resetHighVoltage(unsigned int sleeptime = 1);
 private:
     static const double             TIME_OUT = 10.;
     enum HIGH_VOLTAGE { NOT_INITIALIZED,

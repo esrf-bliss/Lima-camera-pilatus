@@ -1220,7 +1220,7 @@ bool Camera::hasHighVoltageReset()
     return false;
 }
 
-void Camera::resetHighVoltage(double sleep_time)
+void Camera::resetHighVoltage(unsigned int sleep_time)
 {
   DEB_MEMBER_FUNCT();
   AutoMutex lock(m_cond.mutex());
