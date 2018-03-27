@@ -116,7 +116,8 @@ Camera::Camera(const char *host,int port)
 		    m_has_cmd_roi(true),
 		    m_major_version(-1),
 		    m_minor_version(-1),
-		    m_patch_version(-1)
+		    m_patch_version(-1),
+		    m_cmd_high_voltage_reset(NOT_INITIALIZED)
 {
     DEB_CONSTRUCTOR();
     m_server_ip         = host;
@@ -603,6 +604,13 @@ void Camera::_run()
 			    {
 			      m_has_cmd_roi = false;
 			      _resync();
+			    }
+			  else if(msg.find("Unrecognized command: resetmodulepower") != 
+				  std::string::npos)
+			    {
+			      m_cmd_high_voltage_reset = DONT_HAVE_HIGH_VOLTAGE;
+			      m_state = Camera::STANDBY;
+			      m_cond.broadcast();
 			    }
 			  else
 			    {
@@ -1186,5 +1194,75 @@ void Camera::setRoi(const std::string& roi_pattern)
 			    << DEB_VAR2(roi_pattern,m_error_message);
     }
 }
+/*-----------------------------------------------------
+		  High voltage reset command (Cdte)
+------------------------------------------------------*/
+bool Camera::hasHighVoltageReset()
+{
+  DEB_MEMBER_FUNCT();
 
-//-----------------------------------------------------
+  AutoMutex lock(m_cond.mutex());
+  if(m_pilatus3_threshold_mode)
+    {
+      if(m_cmd_high_voltage_reset == NOT_INITIALIZED)
+	{
+          lock.unlock();
+	  try
+	    {
+	      resetHighVoltage();
+	    }
+	  catch(...)
+	    {}
+	  lock.lock();
+	}
+      return m_cmd_high_voltage_reset == HAS_HIGH_VOLTAGE;
+    }
+  else
+    return false;
+}
+
+void Camera::resetHighVoltage(unsigned int sleep_time)
+{
+  DEB_MEMBER_FUNCT();
+  AutoMutex lock(m_cond.mutex());
+  if(m_cmd_high_voltage_reset == DONT_HAVE_HIGH_VOLTAGE)
+    THROW_HW_ERROR(Error) << "This detector doesn't have a "
+			  << "command to reset high voltage";
+  std::stringstream msg;
+  msg << "resetmodulepower";
+  if(sleep_time > 0.) msg << " " << sleep_time;
+  m_state = Camera::RESET_HIGH_VOLTAGE;
+  send(msg.str());
+
+  m_cond.wait(sleep_time);
+  while(m_state == Camera::RESET_HIGH_VOLTAGE)
+    {
+      m_cond.wait(TIME_OUT);
+    }
+
+  if(m_cmd_high_voltage_reset == DONT_HAVE_HIGH_VOLTAGE)
+    {
+      THROW_HW_ERROR(Error) << "This detector doesn't have a "
+			    << "command to reset high voltage";
+    }
+  else
+    {
+      m_cmd_high_voltage_reset = HAS_HIGH_VOLTAGE;
+    }
+  if(m_state == Camera::ERROR)
+    {
+      m_state = Camera::STANDBY;
+      THROW_HW_ERROR(Error) << "Could not reset high voltage";
+    }
+  else
+    {
+      /** Refresh the energy settings.
+	  Has the chip supply voltage and HV are power cycle,
+	  it lost the energy threshold.
+       */
+      if(m_has_cmd_setenergy)
+	send("setenergy");
+      else
+	send("setthreshold");
+    }
+}

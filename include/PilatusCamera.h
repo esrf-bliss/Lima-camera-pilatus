@@ -52,6 +52,7 @@ public:
 	SETTING_ROI,
         KILL_ACQUISITION,
         RUNNING,
+	RESET_HIGH_VOLTAGE,
 	ANYCMD
     };
 
@@ -132,8 +133,13 @@ public:
 
     bool hasRoiCapability() const;
     void setRoi(const std::string&);
+
+    bool hasHighVoltageReset();
+    void resetHighVoltage(unsigned int sleeptime = 1);
 private:
     static const double             TIME_OUT = 10.;
+    enum HIGH_VOLTAGE { NOT_INITIALIZED,
+			HAS_HIGH_VOLTAGE,DONT_HAVE_HIGH_VOLTAGE };
 
     const        std::string& errorMessage() const;
     void         softReset();
@@ -187,6 +193,7 @@ private:
     int			    m_major_version;
     int                     m_minor_version;
     int                     m_patch_version;
+    HIGH_VOLTAGE            m_cmd_high_voltage_reset;
 };
 }
 }
