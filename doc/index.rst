@@ -16,59 +16,41 @@ Because of the specified properties, PILATUS detectors are superiour to state-of
 Module configuration
 ````````````````````
 
-Pilatus python module need at least the lima core module.
-
-The minimum configuration file is *config.inc* :
+Follow the generic instructions in :ref:`build_installation`. If using CMake directly, add the following flag:
 
 .. code-block:: sh
 
-  COMPILE_CORE=1
-  COMPILE_SIMULATOR=0
-  COMPILE_SPS_IMAGE=1
-  COMPILE_ESPIA=0
-  COMPILE_FRELON=0
-  COMPILE_MAXIPIX=0
-  COMPILE_PILATUS=1
-  COMPILE_CBF_SAVING=0
-  export COMPILE_CORE COMPILE_SPS_IMAGE COMPILE_SIMULATOR \
-         COMPILE_ESPIA COMPILE_FRELON COMPILE_MAXIPIX COMPILE_PILATUS \
-         COMPILE_CBF_SAVING
+ -DLIMACAMERA_PILATUS=true
 
-
-See :ref:`Compilation`
-
+For the Tango server installation, refers to :ref:`tango_installation`.
 
 Installation
 ````````````
 
-- After installing python modules on pilatus pc :ref:`installation`
+On Pilatus PC, create **as root** a ramdisk of 8GB which will be used by Lima dserver as temporary buffer:
 
-- And probably Tango server :ref:`tango_installation`
+    * edit file ``/etc/fstab`` and add the following line:
 
-- On Pilatus PC create **as root** a ramdisk of 8GB which will be used by Lima dserver as temporary buffer:
-
-    * edit file /etc/fstab and add the following line: 
-    
     .. code-block:: sh
 
       none                 /lima_data tmpfs    size=8g,mode=0777      0 0
 
-    * make the directory: 
+    * make the directory:
 
     .. code-block:: sh
 
       mkdir /lima_data
 
-    * and finally mount the ramdisk: 
+    * and finally mount the ramdisk:
 
     .. code-block:: sh
 
       mount -a
 
-- For Pilatus3 edit file ~det/p2_det/config/cam_data/camera.def and add thoses two lines:
+- For Pilatus3, edit file ``~det/p2_det/config/cam_data/camera.def`` and add thoses two lines:
 
     * camera_wide = WIDTH_OF_THE_DETECTOR
-    * camera_high = HEIGHT_OF_THE_DETECTOR 
+    * camera_high = HEIGHT_OF_THE_DETECTOR
 
 Start the system
 ````````````````
@@ -92,7 +74,8 @@ Start the system
 If the cameserver window notice a connection, seams to work ;)
 
 How to use
-````````````
+``````````
+
 This is a python code example for a simple test:
 
 .. code-block:: python
@@ -126,8 +109,8 @@ This is a python code example for a simple test:
 
   # now ask for 2 sec. exposure and 10 frames
   acq.setAcqExpoTime(2)
-  acq.setNbImages(10) 
-  
+  acq.setNbImages(10)
+
   ct.prepareAcq()
   ct.startAcq()
 
@@ -136,6 +119,6 @@ This is a python code example for a simple test:
   while lastimg !=9:
     time.sleep(1)
     lastimg = ct.getStatus().ImageCounters.LastImageReady
- 
+
   # read the first image
   im0 = ct.ReadImage(0)
