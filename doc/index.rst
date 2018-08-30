@@ -81,7 +81,7 @@ This is a python code example for a simple test:
 .. code-block:: python
 
   from Lima import Pilatus
-  from lima import Core
+  from Lima import Core
 
   cam = Pilatus.Camera()
   hwint = Pilatus.Interface(cam)
@@ -109,7 +109,7 @@ This is a python code example for a simple test:
 
   # now ask for 2 sec. exposure and 10 frames
   acq.setAcqExpoTime(2)
-  acq.setNbImages(10)
+  acq.setAcqNbFrames(10)
 
   ct.prepareAcq()
   ct.startAcq()

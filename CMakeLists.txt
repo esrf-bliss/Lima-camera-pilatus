@@ -23,8 +23,6 @@
 ############################################################################
 set(NAME "pilatus")
 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
-
 set(${NAME}_srcs src/PilatusCamera.cpp  src/PilatusInterface.cpp
 	 src/PilatusSaving.cpp)
 	 
@@ -36,9 +34,8 @@ target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/inclu
 #LIBRARIES
 find_library(PILATUS_CBF_LIB cbf)
 if("${PILATUS_CBF_LIB}" STREQUAL "PILATUS_CBF_LIB-NOTFOUND")
-  message(FATAL_ERROR "${NAME} : libcbf not found, you can search it in cmake-gui or try to install it if it isn't here.")
+  message(FATAL_ERROR "${NAME} : CBF library not found, you can search it in cmake-gui or try to install it if it isn't here.")
 endif()
-
 
 target_link_libraries(lima${NAME} limacore)
 target_link_libraries(lima${NAME} ${PILATUS_CBF_LIB})

@@ -19,8 +19,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#include <cbf/cbf.h>
-#include <cbf/cbf_simple.h>
+#include <cbflib/cbf.h>
+#include <cbflib/cbf_simple.h>
 #include "PilatusSaving.h"
 #include "PilatusCamera.h"
 

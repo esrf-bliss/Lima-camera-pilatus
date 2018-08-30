@@ -137,7 +137,7 @@ public:
     bool hasHighVoltageReset();
     void resetHighVoltage(unsigned int sleeptime = 1);
 private:
-    static const double             TIME_OUT = 10.;
+    static constexpr double             TIME_OUT = 10.;
     enum HIGH_VOLTAGE { NOT_INITIALIZED,
 			HAS_HIGH_VOLTAGE,DONT_HAVE_HIGH_VOLTAGE };
 
