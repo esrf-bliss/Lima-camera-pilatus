@@ -34,6 +34,9 @@
 using namespace lima;
 using namespace lima::Pilatus;
 
+
+// This should be args from the contructor to make it more configurable
+// (for example when lima is running outside the DCU)
 static const char* CAMERA_INFO_FILE = "p2_det/config/cam_data/camera.def";
 static const char* CAMERA_DEFAULT_USER= "det";
 
@@ -63,9 +66,9 @@ DetInfoCtrlObj::DetInfoCtrlObj(const DetInfoCtrlObj::Info* info)
 	if(getpwnam_r(CAMERA_DEFAULT_USER,&aPwd,
 		       aBuffer,sizeof(aBuffer),
 		      &aResultPwd))
-	  THROW_HW_ERROR(Error) << "Can't get information of user : " 
+	  THROW_HW_ERROR(Error) << "Can't get information of user : "
 				<< CAMERA_DEFAULT_USER;
-	
+
 	char aConfigFullPath[1024];
 	snprintf(aConfigFullPath,sizeof(aConfigFullPath),
 		 "%s/%s",aPwd.pw_dir,CAMERA_INFO_FILE);
@@ -373,7 +376,7 @@ void SyncCtrlObj::prepareAcq()
     double exposure =  m_exposure_requested;
     double exposure_period = exposure + m_latency;
 
-    if(m_det_info.isPilatus3() && 
+    if(m_det_info.isPilatus3() &&
        (trig_mode == ExtGate || trig_mode == ExtTrigMult))
       {
 	int max_frequency = m_roi.getMaxFrequency();
@@ -385,7 +388,7 @@ void SyncCtrlObj::prepareAcq()
 	  }
       }
     m_cam.setExposurePeriod(exposure_period);
-	
+
     int nb_frames = (trig_mode == IntTrigMult)?1:m_nb_frames;
     m_cam.setNbImagesInSequence(nb_frames);
 
@@ -459,7 +462,7 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
       else if(detImageSize == Size(981,1043)) // Pilatus 1M
 	{
 	  fullframe_max_frequency = 500;
-	  
+
 	  Roi r1(MODULE_WIDTH + MODULE_WIDTH_SPACE,
 		 2 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE,
 		 MODULE_WIDTH,
@@ -490,7 +493,7 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
 
   if(!m_has_hardware_roi)
     DEB_WARNING() << "Hardware Roi not managed for this detector";
-  
+
   Roi full(Point(0,0),detImageSize);
   m_possible_rois.push_back(PATTERN2ROI(Pattern("0",fullframe_max_frequency),full));
   m_current_roi = full;
@@ -511,7 +514,7 @@ void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
 void RoiCtrlObj::setRoi(const Roi& set_roi)
 {
   DEB_MEMBER_FUNCT();
-  
+
   ROIS::const_iterator i;
   if(set_roi.isActive())
     {
@@ -522,10 +525,10 @@ void RoiCtrlObj::setRoi(const Roi& set_roi)
   else
     i = --m_possible_rois.end(); // full_frame
 
- 
+
   if(m_has_hardware_roi)
     m_cam.setRoi(i->first.pattern);
-  
+
   m_current_roi = i->second;
   m_current_max_frequency = i->first.max_frequency;
 }
@@ -599,7 +602,7 @@ public:
     AutoMutex lock(m_mutex);
     m_data_2_base_n_size[aDataBuffer] = AddressNSize(mmap_mem_base,length);
   }
-  
+
 private:
   Mutex			m_mutex;
   Data2BaseNSize	m_data_2_base_n_size;
@@ -673,7 +676,7 @@ public:
       }
     else
       aReturnFlag = int(m_image_events.size()) != m_interface.m_cam.nbImagesInSequence();
-    
+
     return aReturnFlag;
   }
   virtual void getFrameDim(FrameDim& frame_dim)
@@ -685,7 +688,7 @@ public:
     const Size &current_size = hw_roi.getSize();
     ImageType current_image_type;
     m_interface.m_det_info.getCurrImageType(current_image_type);
-    
+
     frame_dim.setSize(current_size);
     frame_dim.setImageType(current_image_type);
   }
@@ -857,8 +860,8 @@ void Interface::getStatus(StatusType& status)
     else
     {
         status.det = DetExposure;
-        status.acq = AcqRunning;       
-    }    
+        status.acq = AcqRunning;
+    }
     status.det_mask = DetExposure;
     DEB_TRACE() << DEB_VAR2(cam_status,status);
 }
