@@ -45,7 +45,7 @@ static const char CAMERA_WIDE_TOKEN[] = "camera_wide";
 static const char CAMERA_HIGH_TOKEN[] = "camera_high";
 static const char CAMERA_PILATUS3_TOKEN[] = "PILATUS3";
 
-static const char WATCH_PATH[] = "/lima_data";
+static const char WATCH_PATH[] = "/lima";
 static const char FILE_PATTERN[] = "tmp_img_%.7d.edf";
 static const int  DECTRIS_EDF_OFFSET = 1024;
 
@@ -710,7 +710,7 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
             :   m_cam(cam),
                 m_det_info(info),
 		m_buffer_cbk(new Interface::_BufferCallback(*this)),
-                m_buffer(WATCH_PATH,FILE_PATTERN,
+                m_buffer(info->m_watch_path.c_str(),FILE_PATTERN,
 			 *m_buffer_cbk),
 		m_roi(cam,m_det_info),
                 m_sync(cam,m_det_info,m_roi),

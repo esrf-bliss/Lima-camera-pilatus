@@ -11,6 +11,7 @@ namespace Pilatus
     {
       Size		m_det_size;
       std::string 	m_det_model;
+      std::string   m_watch_path;
     };
     DetInfoCtrlObj(const Pilatus::DetInfoCtrlObj::Info* = NULL);
     virtual ~DetInfoCtrlObj();
