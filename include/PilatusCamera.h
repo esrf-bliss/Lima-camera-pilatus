@@ -151,6 +151,7 @@ private:
     void         _run();    
     void         _initVariable();
     void         _resync();
+    void         _checkcmd();
     void         _reinit();
     void	 _pilatus2model();
     void	 _pilatus3model(); ///< set pilatus3 threshold extention

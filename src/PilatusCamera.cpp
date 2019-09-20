@@ -229,6 +229,7 @@ void Camera::connect(const char *host,int port)
   AutoMutex aLock(m_cond.mutex());
   _initVariable();
   _connect(host,port);
+  _checkcmd();
 }
 
 void Camera::_connect(const char *host,int port)
@@ -278,6 +279,7 @@ void Camera::_connect(const char *host,int port)
 //-----------------------------------------------------
 void Camera::_resync()
 {
+    DEB_MEMBER_FUNCT();
     if(m_has_cmd_setenergy)
       send("setenergy");
     else
@@ -295,6 +297,41 @@ void Camera::_resync()
     send("setackint 0");
     send("dbglvl 1");
     send("version");
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_checkcmd()
+{
+  DEB_MEMBER_FUNCT();
+  char messages[16384];
+  int aMessageSize = recv(m_socket,messages,sizeof(messages),0);
+  if(aMessageSize > 0)
+    {
+      std::string strMessages(messages,aMessageSize );
+      std::vector<std::string> msg_vector;
+      _split(strMessages,SPLIT_SEPARATOR,msg_vector);
+      for(std::vector<std::string>::iterator msg_iterator = msg_vector.begin();
+	  msg_iterator != msg_vector.end();++msg_iterator)
+	{
+	  std::string &msg = *msg_iterator;
+	  if(msg.find("Unrecognized command: setenergy") !=
+	     std::string::npos)
+	    {
+	      DEB_TRACE() <<"-- no setenergy command";
+	      m_has_cmd_setenergy = false;
+	    }
+	  if(msg.find("Unrecognized command: setroi") != std::string::npos
+	     or
+	     msg.find("Invalid command: SetROI") != std::string::npos
+	     )
+	    {
+	      DEB_TRACE() <<"-- no setroi command";
+	      m_has_cmd_roi = false;
+	    }
+	}
+    }
 }
 
 //-----------------------------------------------------
@@ -575,12 +612,17 @@ void Camera::_run()
                             m_state = Camera::STANDBY;
                             m_nb_acquired_images = m_nimages;
                         }
+			else if(m_state == Camera::STANDBY)
+			{
+			    // The acquisition was aborted
+			    DEB_TRACE() << "-- Ignore ERROR";
+			}
                         else
                         {
-                            DEB_TRACE() << "-- ERROR";                      
-                            m_state = Camera::ERROR;
-                            msg = msg.substr(2);
-                            m_error_message = msg.substr(msg.find(" "));
+			    DEB_TRACE() << "-- ERROR";                      
+			    m_state = Camera::ERROR;
+			    msg = msg.substr(2);
+			    m_error_message = msg.substr(msg.find(" "));
                         }
                     }
                     else if(msg.substr(0,2) == "1 ")
@@ -600,8 +642,13 @@ void Camera::_run()
 			      DEB_TRACE() << "Can't retrieved camserver version";
 			    }
 			  else if(msg.find("Unrecognized command: setroi") !=
-				  std::string::npos)
+				  std::string::npos
+				  or 
+				  msg.find("Invalid command: SetROI") !=
+				  std::string::npos
+				  )
 			    {
+			      DEB_TRACE() << "Does not have setroi cmd";
 			      m_has_cmd_roi = false;
 			      _resync();
 			    }
@@ -1071,7 +1118,7 @@ void Camera::stopAcquisition()
     if(m_state == Camera::RUNNING)
     {
         m_state = Camera::KILL_ACQUISITION;
-        send("k");
+        send("camcmd k");
     }
 }
 
