@@ -688,9 +688,11 @@ public:
 	m_interface.m_cam.errorStopAcquisition();
 	aReturnFlag = false;
       }
-    else
-      aReturnFlag = int(m_image_events.size()) != m_interface.m_cam.nbImagesInSequence();
-    
+    else {
+      int nb_frames;
+      m_interface.m_sync.getNbHwFrames(nb_frames);
+      aReturnFlag = int(m_image_events.size()) != nb_frames;
+    }
     return aReturnFlag;
   }
   virtual void getFrameDim(FrameDim& frame_dim)
@@ -808,6 +810,8 @@ void Interface::prepareAcq()
     else
       m_buffer.prepare();
     m_sync.prepareAcq();
+    // counter only use for IntTrigMult to increase the file number
+    m_image_number = 0;
 
 }
 
@@ -818,12 +822,17 @@ void Interface::startAcq()
 {
     DEB_MEMBER_FUNCT();
 
-    if(m_saving.isActive())
-      m_saving.start();
-    else
-      m_buffer.start();
-
-    m_cam.startAcquisition();
+    // multi start calls if trigger mode is IntTrigMult
+    if (m_image_number == 0) {
+      if(m_saving.isActive())
+	m_saving.start();
+      else
+	m_buffer.start();
+    }
+    // in case of IntTrigMult trigger mode an image number
+    // is passed to the start to increase the file number
+    m_cam.startAcquisition(m_image_number);
+    m_image_number++;
 }
 
 //-----------------------------------------------------
@@ -859,8 +868,9 @@ void Interface::getStatus(StatusType& status)
 	    m_sync.getNbHwFrames(nbFrames);
 	    if(m_buffer.isStopped())
 	      status.acq = AcqReady;
-	    else
+	    else {
 	      status.acq = getNbHwAcquiredFrames() >= nbFrames ? AcqReady : AcqRunning;
+	    }
 	  }
 	else
 	  status.acq = AcqReady;

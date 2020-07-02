@@ -209,6 +209,7 @@ private:
         RoiCtrlObj m_roi;
 	SyncCtrlObj m_sync;
 	SavingCtrlObj m_saving;
+	int m_image_number;
 };
 
 } // namespace Pilatus
