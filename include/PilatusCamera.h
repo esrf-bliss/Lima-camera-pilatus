@@ -74,8 +74,11 @@ public:
         EXTERNAL_GATE
     };
 
-    Camera(const char *host = "localhost",int port = 41234);
-    ~Camera();
+    Camera(const std::string& host_name = "localhost",
+	   int host_port = 41234,
+	   const std::string& config_file = "/home/det/p2_det/config/cam_data/camera.def",
+	   const std::string& tmpfs_path = "/lima_data");
+ ~Camera();
     
     void connect(const char* host,int port);
     
@@ -136,6 +139,9 @@ public:
 
     bool hasHighVoltageReset();
     void resetHighVoltage(unsigned int sleeptime = 1);
+    const char* configFile() const {return m_config_file.c_str();};
+    const char* tmpFsPath() const {return m_tmpfs_path.c_str();};
+
 private:
     static constexpr double             TIME_OUT = 10.;
     enum HIGH_VOLTAGE { NOT_INITIALIZED,
@@ -162,7 +168,9 @@ private:
 
     //socket/synchronization with pilatus variables
     std::string             m_server_ip;
-    int                     m_server_port; 
+    int                     m_server_port;
+    std::string             m_config_file;
+    std::string             m_tmpfs_path;
     int                     m_socket;
     bool                    m_stop;
     pthread_t               m_thread_id;

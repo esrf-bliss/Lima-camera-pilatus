@@ -51,7 +51,7 @@ public:
 	  Size		m_det_size;
 	  std::string 	m_det_model;
 	};
-	DetInfoCtrlObj(const Info* = NULL);
+	DetInfoCtrlObj(Camera& cam, const Info* = NULL);
 	virtual ~DetInfoCtrlObj();
 
 	virtual void getMaxImageSize(Size& max_image_size);
@@ -84,6 +84,7 @@ private:
 	Info	m_info;
         bool    m_is_pilatus2;
         bool    m_is_pilatus3;
+	Camera& m_cam;
 };
 
 /*******************************************************************

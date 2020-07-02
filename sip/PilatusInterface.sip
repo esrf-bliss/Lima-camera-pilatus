@@ -12,7 +12,7 @@ namespace Pilatus
       Size		m_det_size;
       std::string 	m_det_model;
     };
-    DetInfoCtrlObj(const Pilatus::DetInfoCtrlObj::Info* = NULL);
+    DetInfoCtrlObj(Pilatus::Camera& cam, const Pilatus::DetInfoCtrlObj::Info* = NULL);
     virtual ~DetInfoCtrlObj();
 
     virtual void getMaxImageSize(Size& max_image_size /Out/);

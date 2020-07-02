@@ -43,7 +43,7 @@ namespace Pilatus
         EXTERNAL_GATE
       };
 
-    Camera(const char *host = "localhost",int port = 41234);
+    Camera(const std::string& host_name = "localhost",int host_port = 41234, const std::string& config_file = "/home/det/p2_det/config/cam_data/camera.def", const std::string& tmpfs_path = "/lima_data") /KeywordArgs="Optional"/;
     ~Camera();
     
     void connect(const char* host,int port);
