@@ -112,10 +112,6 @@ class Pilatus(PyTango.Device_4Impl):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
 
-        if self.TmpfsSize:
-            buffer = _PilatusInterface.buffer()
-            buffer.setTmpfsSize(self.TmpfsSize * 1024 * 1024)
-            
 #------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
@@ -296,9 +292,21 @@ class PilatusClass(PyTango.DeviceClass):
 
     #    Device Properties
     device_property_list = {
-        'TmpfsSize' :
+        'host_port' :
         [PyTango.DevInt,
-         "Size of communication temp. filesystem (in MB)",0],
+         "detector computer host name",4123],
+
+        'host_name' :
+        [PyTango.DevString,
+         "detector computer host name","localhost"],
+
+        'config_file' :
+        [PyTango.DevString,
+         "detector config path to get frame dimensions","/home/det/p2_det/config/cam_data/camera.def"],
+
+        'tmpfs_path' :
+        [PyTango.DevString,
+         "temporary file-system path to let camserver stores images","/lima_data"],
         }
 
     #    Command definitions
@@ -371,7 +379,14 @@ def get_control(**keys) :
     global _PilatusCamera
     global _CtControl
     if _PilatusInterface is None:
-        _PilatusCamera = PilatusAcq.Camera()
+        host_name = keys.pop('host_name', 'localhost')
+        host_port = keys.pop('host_port', 41234)
+        config_file = keys.pop('config_file', '/home/det/p2_det/config/cam_data/camera_def')
+        tmpfs_path = keys.pop('tmpfs_path', '/lima_data')
+        _PilatusCamera = PilatusAcq.Camera(host_name = host_name,
+                                           host_port = host_port,
+                                           config_file = config_file,
+                                           tmpfs_path = tmpfs_path)
         _PilatusInterface = PilatusAcq.Interface(_PilatusCamera)
         _CtControl = Core.CtControl(_PilatusInterface)
     return _CtControl 

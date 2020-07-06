@@ -34,15 +34,11 @@
 using namespace lima;
 using namespace lima::Pilatus;
 
-static const char* CAMERA_INFO_FILE = "p2_det/config/cam_data/camera.def";
-static const char* CAMERA_DEFAULT_USER= "det";
-
 static const char CAMERA_NAME_TOKEN[] = "camera_name";
 static const char CAMERA_WIDE_TOKEN[] = "camera_wide";
 static const char CAMERA_HIGH_TOKEN[] = "camera_high";
 static const char CAMERA_PILATUS3_TOKEN[] = "PILATUS3";
 
-static const char WATCH_PATH[] = "/lima_data";
 static const char FILE_PATTERN[] = "tmp_img_%.7d.edf";
 static const int  DECTRIS_EDF_OFFSET = 1024;
 
@@ -56,7 +52,8 @@ static const float P3_6M_MAX_FREQUENCY[3] = {100, 200, 500}; //full, c18, c2
  * \brief DetInfoCtrlObj constructor
  * \param info if info is NULL look for ~det/p2_det/config/cam_data/camera.def file
  *******************************************************************/
-DetInfoCtrlObj::DetInfoCtrlObj(const DetInfoCtrlObj::Info* info)
+DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam,const DetInfoCtrlObj::Info* info):
+  m_cam(cam)
 {
     DEB_CONSTRUCTOR();
     if(info)
@@ -66,19 +63,13 @@ DetInfoCtrlObj::DetInfoCtrlObj(const DetInfoCtrlObj::Info* info)
 	char aBuffer[2048];
 	struct passwd aPwd;
 	struct passwd *aResultPwd;
-	if(getpwnam_r(CAMERA_DEFAULT_USER,&aPwd,
-		       aBuffer,sizeof(aBuffer),
-		      &aResultPwd))
-	  THROW_HW_ERROR(Error) << "Can't get information of user : " 
-				<< CAMERA_DEFAULT_USER;
+
+	const char *config_file = m_cam.configFile();
 	
-	char aConfigFullPath[1024];
-	snprintf(aConfigFullPath,sizeof(aConfigFullPath),
-		 "%s/%s",aPwd.pw_dir,CAMERA_INFO_FILE);
-	FILE* aConfFile = fopen(aConfigFullPath,"r");
+	FILE* aConfFile = fopen(config_file,"r");
 	if(!aConfFile)
 	  THROW_HW_ERROR(Error) << "Can't open config file :"
-				<< aConfigFullPath;
+				<< config_file;
 	char aReadBuffer[1024];
 	int aWidth = -1,aHeight = -1;
 	while(fgets(aReadBuffer,sizeof(aReadBuffer),aConfFile))
@@ -697,9 +688,11 @@ public:
 	m_interface.m_cam.errorStopAcquisition();
 	aReturnFlag = false;
       }
-    else
-      aReturnFlag = int(m_image_events.size()) != m_interface.m_cam.nbImagesInSequence();
-    
+    else {
+      int nb_frames;
+      m_interface.m_sync.getNbHwFrames(nb_frames);
+      aReturnFlag = int(m_image_events.size()) != nb_frames;
+    }
     return aReturnFlag;
   }
   virtual void getFrameDim(FrameDim& frame_dim)
@@ -731,13 +724,12 @@ private:
 
 Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
             :   m_cam(cam),
-                m_det_info(info),
+                m_det_info(cam, info),
 		m_buffer_cbk(new Interface::_BufferCallback(*this)),
-                m_buffer(WATCH_PATH,FILE_PATTERN,
-			 *m_buffer_cbk),
-		m_roi(cam,m_det_info),
-                m_sync(cam,m_det_info,m_roi),
-		m_saving(cam)
+		m_roi(cam, m_det_info),
+                m_sync(cam,m_det_info, m_roi),
+		m_saving(cam),
+		m_buffer(cam.tmpFsPath(), FILE_PATTERN, *m_buffer_cbk)
 {
     DEB_CONSTRUCTOR();
 
@@ -818,6 +810,8 @@ void Interface::prepareAcq()
     else
       m_buffer.prepare();
     m_sync.prepareAcq();
+    // counter only use for IntTrigMult to increase the file number
+    m_image_number = 0;
 
 }
 
@@ -828,12 +822,17 @@ void Interface::startAcq()
 {
     DEB_MEMBER_FUNCT();
 
-    if(m_saving.isActive())
-      m_saving.start();
-    else
-      m_buffer.start();
-
-    m_cam.startAcquisition();
+    // multi start calls if trigger mode is IntTrigMult
+    if (m_image_number == 0) {
+      if(m_saving.isActive())
+	m_saving.start();
+      else
+	m_buffer.start();
+    }
+    // in case of IntTrigMult trigger mode an image number
+    // is passed to the start to increase the file number
+    m_cam.startAcquisition(m_image_number);
+    m_image_number++;
 }
 
 //-----------------------------------------------------
@@ -869,8 +868,9 @@ void Interface::getStatus(StatusType& status)
 	    m_sync.getNbHwFrames(nbFrames);
 	    if(m_buffer.isStopped())
 	      status.acq = AcqReady;
-	    else
+	    else {
 	      status.acq = getNbHwAcquiredFrames() >= nbFrames ? AcqReady : AcqRunning;
+	    }
 	  }
 	else
 	  status.acq = AcqReady;

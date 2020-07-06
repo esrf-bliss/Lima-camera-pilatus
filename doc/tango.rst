@@ -13,7 +13,14 @@ This camera device has no property.
 =============== =============== =============== ==============================================================
 Property name	Mandatory	Default value	Description
 =============== =============== =============== ==============================================================
-TmpfsSize       No              0               OBSOLETE
+host_name       No              localhost       Pilatus computer hostname
+host_port       No              41234           Pilatus camserver port number
+config_file     No              /home/det/      Configuration file path, read to get pilatus version (2 or 3)
+                                p2_det/config/  and the camera size (height and width)
+                                cam_data/
+                                camera.def
+tmpfs_path      No              /lima_data      Path to the temporary file-system where camserver will store
+                                                the images				
 =============== =============== =============== ==============================================================
 
 Attributes
@@ -26,7 +33,8 @@ fill_mode		rw	DevString		The gap fill mode (**ON,OFF**)
 threshold		rw	DevLong			The threshold level of detector in eV
 energy_threshold	rw	DevFloat		The energy threshold in keV (set the gain and the threshold)
 trigger_delay		rw	DevDouble		The start exposure delay after the hard trigger
-nb_exposure_per_frame   rw      DevLong                 The number of exposure/frame to set an accumulation of frames                                                                                                Very useful to not saturate the pixel counters.
+nb_exposure_per_frame   rw      DevLong                 The number of exposure/frame to set an accumulation of
+                                                        frames
 ======================= ======= ======================= ============================================================
 
 Commands

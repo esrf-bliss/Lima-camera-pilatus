@@ -104,7 +104,10 @@ inline void _split(const std::string inString,
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-Camera::Camera(const char *host,int port)
+Camera::Camera(const std::string& host_name,
+	       int host_port,
+	       const std::string& config_file,
+	       const std::string& tmpfs_path)
                 :   m_socket(-1),
                     m_stop(false),
                     m_thread_id(0),
@@ -117,11 +120,15 @@ Camera::Camera(const char *host,int port)
 		    m_major_version(-1),
 		    m_minor_version(-1),
 		    m_patch_version(-1),
-		    m_cmd_high_voltage_reset(NOT_INITIALIZED)
+		    m_cmd_high_voltage_reset(NOT_INITIALIZED),
+		    m_server_ip(host_name),
+		    m_server_port(host_port),
+		    m_config_file(config_file),
+		    m_tmpfs_path(tmpfs_path)
+
 {
     DEB_CONSTRUCTOR();
-    m_server_ip         = host;
-    m_server_port       = port;
+
     _initVariable();
 
     if(pipe(m_pipes))
@@ -131,7 +138,7 @@ Camera::Camera(const char *host,int port)
 
     try
       {
-	connect(host,port);
+	connect(host_name.c_str(),host_port);
       }
     catch(Exception &e)		// Not an error in that case
       {
