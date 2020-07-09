@@ -381,7 +381,7 @@ def get_control(**keys) :
     if _PilatusInterface is None:
         host_name = keys.pop('host_name', 'localhost')
         host_port = keys.pop('host_port', 41234)
-        config_file = keys.pop('config_file', '/home/det/p2_det/config/cam_data/camera_def')
+        config_file = keys.pop('config_file', '/home/det/p2_det/config/cam_data/camera.def')
         tmpfs_path = keys.pop('tmpfs_path', '/lima_data')
         _PilatusCamera = PilatusAcq.Camera(host_name = host_name,
                                            host_port = host_port,
