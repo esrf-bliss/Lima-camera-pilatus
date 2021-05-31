@@ -80,10 +80,12 @@ public:
 	double getMinLatTime() const;
 	bool isPilatus2() const {return m_is_pilatus2;}
 	bool isPilatus3() const {return m_is_pilatus3;}
+	bool isSSerie() const {return m_is_s_serie;}
 private:
 	Info	m_info;
         bool    m_is_pilatus2;
         bool    m_is_pilatus3;
+        bool    m_is_s_serie;
 	Camera& m_cam;
 };
 

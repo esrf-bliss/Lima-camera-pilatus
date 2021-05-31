@@ -37,6 +37,8 @@ using namespace lima::Pilatus;
 static const char CAMERA_NAME_TOKEN[] = "camera_name";
 static const char CAMERA_WIDE_TOKEN[] = "camera_wide";
 static const char CAMERA_HIGH_TOKEN[] = "camera_high";
+static const char CAMERA_S_SERIE_TOKEN[] = "camera_s_serie";
+
 static const char CAMERA_PILATUS3_TOKEN[] = "PILATUS3";
 
 static const char FILE_PATTERN[] = "tmp_img_%.7d.edf";
@@ -53,7 +55,8 @@ static const float P3_6M_MAX_FREQUENCY[3] = {100, 200, 500}; //full, c18, c2
  * \param info if info is NULL look for ~det/p2_det/config/cam_data/camera.def file
  *******************************************************************/
 DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam,const DetInfoCtrlObj::Info* info):
-  m_cam(cam)
+  m_cam(cam),
+  m_is_s_serie(false)
 {
     DEB_CONSTRUCTOR();
     if(info)
@@ -103,6 +106,12 @@ DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam,const DetInfoCtrlObj::Info* info):
 		while(*aPt && (*aPt < '1' || *aPt > '9')) ++aPt;
 		aWidth = atoi(aPt);
 	      }
+	    else if(!strncmp(aReadBuffer,
+			     CAMERA_S_SERIE_TOKEN,sizeof(CAMERA_S_SERIE_TOKEN) - 1))
+	      {
+		m_is_s_serie = true;
+	      }
+	    
 	  }
 	if(aWidth <= 0 || aHeight <= 0)
 	  {
@@ -110,6 +119,11 @@ DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam,const DetInfoCtrlObj::Info* info):
 	    THROW_HW_ERROR(Error) << "Can't get detector info";
 	  }
 	m_info.m_det_size = Size(aWidth,aHeight);
+	if (m_is_s_serie )
+	  m_info.m_det_model += ", S serie";
+	else
+	  m_info.m_det_model += ", X serie";
+
 	fclose(aConfFile);
       }
 }
@@ -413,7 +427,13 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
   int c18_max_frequency = -1;
   int c2_max_frequency = -1;
 
-  if(detImageSize == Size(2463,2527)) // Pilatus 6M
+  // S (versus X) series do not have hardware ROI capability
+  // need the camera.conf file patched with keyword "camera_s_serie"
+  if (det.isSSerie())
+    {
+      m_has_hardware_roi = false;
+    }
+  else if(detImageSize == Size(2463,2527)) // Pilatus 6M
     {
       if(det.isPilatus2())
 	{
@@ -502,9 +522,7 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
 	     3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
       m_possible_rois.push_back(PATTERN2ROI(Pattern("L3",500),l3));
     }
-  else
-    m_has_hardware_roi = false;
-
+  
   if(!m_has_hardware_roi)
     DEB_WARNING() << "Hardware Roi not managed for this detector";
 
@@ -725,8 +743,8 @@ private:
 Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
             :   m_cam(cam),
                 m_det_info(cam, info),
-		m_buffer_cbk(new Interface::_BufferCallback(*this)),
 		m_roi(cam, m_det_info),
+		m_buffer_cbk(new Interface::_BufferCallback(*this)),
                 m_sync(cam,m_det_info, m_roi),
 		m_saving(cam),
 		m_buffer(cam.tmpFsPath(), FILE_PATTERN, *m_buffer_cbk)
@@ -745,9 +763,14 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
     HwSavingCtrlObj *saving = &m_saving;
     m_cap_list.push_back(HwCap(saving));
 
-    HwRoiCtrlObj *roi = &m_roi;
-    m_cap_list.push_back(HwCap(roi));
-
+    // S (versus X) series do not have hardware ROI capability
+    // need the camera.conf file patched with keyword "camera_s_serie"
+    if (!m_det_info.isSSerie())
+      {
+	HwRoiCtrlObj *roi = &m_roi;
+	m_cap_list.push_back(HwCap(roi));
+      }
+    
     m_buffer.getDirectoryEvent().watch_moved_to();
 
     //Activate new pilatus3 threshold method
