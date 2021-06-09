@@ -353,6 +353,10 @@ void SyncCtrlObj::getLatTime(double& lat_time)
 //-----------------------------------------------------
 void SyncCtrlObj::setNbHwFrames(int nb_frames)
 {
+    DEB_MEMBER_FUNCT();
+    if (nb_frames > 65535)
+      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 65535";
+
     m_nb_frames = nb_frames;
 }
 
@@ -401,7 +405,18 @@ void SyncCtrlObj::prepareAcq()
       }
     m_cam.setExposurePeriod(exposure_period);
 	
-    int nb_frames = (trig_mode == IntTrigMult)?1:m_nb_frames;
+    int nb_frames;
+    // For IntTrigMult only one frame must be set and startAcq() will retrig a single frame
+    // This is the only trigger mode which can run the for ever, For the other modes we must
+    // workaround the number of frames to the maximum value than camserver can accept, this
+    // is risky !!
+    if (trig_mode == IntTrigMult)
+      nb_frames = 1;
+    else if (m_nb_frames == 0)
+      nb_frames = 65535;
+    else
+	nb_frames = m_nb_frames;
+    
     m_cam.setNbImagesInSequence(nb_frames);
 
 }
