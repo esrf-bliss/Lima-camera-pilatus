@@ -769,6 +769,15 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
     HwDetInfoCtrlObj *det_info = &m_det_info;
     m_cap_list.push_back(HwCap(det_info));
 
+    // Usually ramdisk is use to store image files saved by camserver
+    // default max memory size use in HwTmpfsBufferMgr is 50% of the provided ramdisk.
+    // we increase here the size to 95% of the available ramdisk.
+    // The buffer will calculate how many frames (edf files) in can store in
+    // this mapped disk.  For instance if the ramdisk is about 16GB and we stay at 50%
+    // only 8GB can be used to store the images, With a fast and long acquisition
+    // one can get an overrun error.
+    m_buffer.setMemoryPercent(0.95);
+    
     HwBufferCtrlObj *buffer = &m_buffer;
     m_cap_list.push_back(HwCap(buffer));
 
