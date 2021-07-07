@@ -383,6 +383,8 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 //-----------------------------------------------------
 void SyncCtrlObj::prepareAcq()
 {
+    DEB_MEMBER_FUNCT();
+    
     TrigMode trig_mode;
     getTrigMode(trig_mode);
 
