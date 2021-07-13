@@ -354,9 +354,6 @@ void SyncCtrlObj::getLatTime(double& lat_time)
 void SyncCtrlObj::setNbHwFrames(int nb_frames)
 {
     DEB_MEMBER_FUNCT();
-    if (nb_frames > 65535)
-      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 65535";
-
     m_nb_frames = nb_frames;
 }
 
@@ -386,6 +383,8 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 //-----------------------------------------------------
 void SyncCtrlObj::prepareAcq()
 {
+    DEB_MEMBER_FUNCT();
+    
     TrigMode trig_mode;
     getTrigMode(trig_mode);
 
@@ -410,6 +409,10 @@ void SyncCtrlObj::prepareAcq()
     // This is the only trigger mode which can run the for ever, For the other modes we must
     // workaround the number of frames to the maximum value than camserver can accept, this
     // is risky !!
+
+    if (trig_mode == IntTrig && m_nb_frames > 65535)
+      THROW_HW_ERROR(InvalidValue) << "In IntTrig trigger mode, maximum number of frames is 65535";
+
     if (trig_mode == IntTrigMult)
       nb_frames = 1;
     else if (m_nb_frames == 0)
