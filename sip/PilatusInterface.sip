@@ -30,34 +30,9 @@ namespace Pilatus
     virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
 
     double getMinLatTime() const;
-  };
 
-  class SyncCtrlObj: HwSyncCtrlObj
-  {
-%TypeHeaderCode
-#include <PilatusInterface.h>
-%End
-  public:
-
-    SyncCtrlObj(Pilatus::Camera& cam,Pilatus::DetInfoCtrlObj&,Pilatus::RoiCtrlObj&);
-    virtual ~SyncCtrlObj();
-
-    virtual bool checkTrigMode(TrigMode trig_mode);
-    virtual void setTrigMode(TrigMode trig_mode);
-    virtual void getTrigMode(TrigMode& trig_mode /Out/);
-
-    virtual void setExpTime(double exp_time);
-    virtual void getExpTime(double& exp_time /Out/);
-
-    virtual void setLatTime(double lat_time);
-    virtual void getLatTime(double& lat_time /Out/);
-
-    virtual void setNbHwFrames(int nb_frames);
-    virtual void getNbHwFrames(int& nb_frames /Out/);
-
-    virtual void getValidRanges(ValidRangesType& valid_ranges /Out/);
-
-    void prepareAcq();
+  private:
+    DetInfoCtrlObj(const Pilatus::DetInfoCtrlObj&);
   };
 
   class Interface: HwInterface
@@ -91,20 +66,4 @@ namespace Pilatus
   private:
 	  Interface(const Pilatus::Interface&);    
   };
-
-  class RoiCtrlObj : HwRoiCtrlObj
-  {
-%TypeHeaderCode
-#include <PilatusInterface.h>
-%End
-   public:
-    RoiCtrlObj(Pilatus::Camera& cam,Pilatus::DetInfoCtrlObj&);
-
-    virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
-    virtual void setRoi(const Roi& set_roi);
-    virtual void getRoi(Roi& hw_roi);
-
-    int getMaxFrequency() const;
-  };
-
 }; // namespace Pilatus
