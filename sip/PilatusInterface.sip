@@ -87,6 +87,9 @@ namespace Pilatus
     int getThreshold();
     Pilatus::Camera::Gain getGain();
     void sendAnyCommand(const std::string& str);
+
+  private:
+	  Interface(const Pilatus::Interface&);    
   };
 
   class RoiCtrlObj : HwRoiCtrlObj
