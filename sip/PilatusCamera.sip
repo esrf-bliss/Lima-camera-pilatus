@@ -105,5 +105,8 @@ namespace Pilatus
 
     bool hasHighVoltageReset();
     void resetHighVoltage(unsigned int sleeptime = 1);
+
+  private:
+	  Camera(const Pilatus::Camera&);    
    };
 };
