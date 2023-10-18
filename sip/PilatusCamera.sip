@@ -105,7 +105,8 @@ namespace Pilatus
 
     bool hasHighVoltageReset();
     void resetHighVoltage(unsigned int sleeptime = 1);
-
+    void getTemperatureHumidity(float& temperature /Out/, float& humidity /Out/);
+    
   private:
 	  Camera(const Pilatus::Camera&);    
    };

@@ -116,7 +116,7 @@ DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam,const DetInfoCtrlObj::Info* info):
 	if(aWidth <= 0 || aHeight <= 0)
 	  {
 	    fclose(aConfFile);
-	    THROW_HW_ERROR(Error) << "Can't get detector info";
+	    THROW_HW_ERROR(Error) << "Can't get detector info for width and/or height in pixel";
 	  }
 	m_info.m_det_size = Size(aWidth,aHeight);
 	if (m_is_s_serie )

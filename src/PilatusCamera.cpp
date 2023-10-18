@@ -302,6 +302,8 @@ void Camera::_resync()
     send("setackint 0");
     send("dbglvl 1");
     send("version");
+    // read temperature&humidity without channel number camserver will return the first available channel
+    send("thread");
 }
 
 //-----------------------------------------------------
@@ -467,11 +469,12 @@ void Camera::_run()
 		    msg_iterator != msg_vector.end();++msg_iterator)
                 {
                     std::string &msg = *msg_iterator;
+		    DEB_ALWAYS() << DEB_VAR1(msg);
 
                     if(msg.substr(0,2) == "15") // generic response
                     {
                         if(msg.substr(3,2) == "OK") // will check what the message is about
-                        {                            
+                        {
                             std::string real_message = msg.substr(6);
 			    size_t position;
                             if(real_message.find("Energy") != std::string::npos)
@@ -659,6 +662,23 @@ void Camera::_run()
 				m_minor_version = atoi(version_vector[1].c_str());
 				m_patch_version = atoi(version_vector[2].c_str());
 			      }
+			  }
+		      }
+		    else if (msg.substr(0,3) == "215")
+		      {
+			if(msg.substr(4,2) == "OK" &&
+			   msg.substr(7,7) == "Channel")
+			  {
+			    DEB_ALWAYS() << msg.substr(18);
+			    int channel = atof(msg.substr(15,1).c_str());
+			    float temperature, humidity;
+			    temperature = atof(msg.substr(31,4).c_str());
+			    humidity = atof(msg.substr(54,4).c_str());
+
+			    DEB_ALWAYS() <<  DEB_VAR3(channel, temperature, humidity);
+			    m_channel = channel;
+			    m_temperature = temperature;
+			    m_humidity = humidity;
 			  }
 		      }
                 }
@@ -1272,4 +1292,17 @@ void Camera::resetHighVoltage(unsigned int sleep_time)
       else
 	send("setthreshold");
     }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getTemperatureHumidity(float& temperature, float& humidity)
+{
+    AutoMutex aLock(m_cond.mutex());
+    std::stringstream msg;
+    msg << "thread " << m_channel;
+    send(msg.str());
+    temperature = m_temperature;
+    humidity = m_humidity;
 }

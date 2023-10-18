@@ -265,7 +265,13 @@ class Pilatus(PyTango.Device_4Impl):
             image = _CtControl.image()
             roi = AttrHelper.getDictValue(self.__ReadoutRoi, data)
             image.setRoi(roi)
-
+#------------------------------------------------------------------
+#    Read temperature_humidity attribute
+#------------------------------------------------------------------
+    def read_temperature_humidity(self, attr):
+        temperature, humidity = _PilatusCamera.getTemperatureHumidity()
+        attr.set_value([temperature, humidity])
+            
 #==================================================================
 #
 #    Pilatus command methods
@@ -356,6 +362,11 @@ class PilatusClass(PyTango.DeviceClass):
             [[PyTango.DevString,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
+        'temperature_humidity':
+            [[PyTango.DevFloat,
+              PyTango.SPECTRUM,
+              PyTango.READ,
+              2]]
         }
 
 #------------------------------------------------------------------
