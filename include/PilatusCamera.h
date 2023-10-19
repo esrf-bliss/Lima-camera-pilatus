@@ -3,8 +3,10 @@
 //
 // Copyright (C) : 2009-2023
 // European Synchrotron Radiation Facility
-// BP 220, Grenoble 38043
+// CS40220 38043 Grenoble Cedex 9
 // FRANCE
+//
+// Contact: lima@esrf.fr
 //
 // This is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -142,7 +144,7 @@ public:
     const char* configFile() const {return m_config_file.c_str();};
     const char* tmpFsPath() const {return m_tmpfs_path.c_str();};
 
-  void getTemperatureHumidity(float& temperature, float& humidity);
+  void getTemperatureHumidity(std::vector<float>& values);
   
 private:
     static constexpr double             TIME_OUT = 10.;
@@ -204,9 +206,7 @@ private:
     int                     m_minor_version;
     int                     m_patch_version;
     HIGH_VOLTAGE            m_cmd_high_voltage_reset;
-    float                   m_temperature;
-    float                   m_humidity;
-  short                     m_channel;
+    std::vector<float>      m_channel_temperature_humidity_list;
 };
 }
 }

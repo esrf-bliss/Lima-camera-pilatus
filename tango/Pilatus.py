@@ -1,10 +1,12 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2023
 # European Synchrotron Radiation Facility
-# BP 220, Grenoble 38043
+# CS40220 38043 Grenoble Cedex 9
 # FRANCE
+#
+# Contact: lima@esrf.fr
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -269,8 +271,8 @@ class Pilatus(PyTango.Device_4Impl):
 #    Read temperature_humidity attribute
 #------------------------------------------------------------------
     def read_temperature_humidity(self, attr):
-        temperature, humidity = _PilatusCamera.getTemperatureHumidity()
-        attr.set_value([temperature, humidity])
+        values = _PilatusCamera.getTemperatureHumidity()
+        attr.set_value(values)
             
 #==================================================================
 #
@@ -366,7 +368,10 @@ class PilatusClass(PyTango.DeviceClass):
             [[PyTango.DevFloat,
               PyTango.SPECTRUM,
               PyTango.READ,
-              2]]
+              256],
+             {"label": "temperature (C) and humidity (%) for each channel",
+              "description": "<channel x>, temperature, humidity, <channel y>, temperature, humidity ...."
+             }]
         }
 
 #------------------------------------------------------------------

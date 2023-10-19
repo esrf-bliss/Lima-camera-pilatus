@@ -1,24 +1,27 @@
-/*
- This file is part of LImA, a Library for Image Acquisition
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2023
+// European Synchrotron Radiation Facility
+// CS40220 38043 Grenoble Cedex 9
+// FRANCE
+//
+// Contact: lima@esrf.fr
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
 
- Copyright (C) : 2009-2011
- European Synchrotron Radiation Facility
- BP 220, Grenoble 38043
- FRANCE
-
- This is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or
- (at your option) any later version.
-
- This software is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program; if not, see <http://www.gnu.org/licenses/>.
-*/
 #include <pthread.h>
 
 #include <stdlib.h>
@@ -99,6 +102,34 @@ inline void _split(const std::string inString,
     }
 
     returnVector.push_back (inString.substr (start));
+}
+
+//-----------------------------------------------------
+// split the thread command returned message and extract
+// the channel, temperature and humidity
+// for instance a 6M model returns:
+// msg=215 OK Channel 0: Temperature = 32.1C, Rel. Humidity = 28.6%;
+// Channel 1: Temperature = 27.0C, Rel. Humidity = 38.1%;
+// Channel 2: Temperature = 29.5C, Rel. Humidity = 0.0%
+
+//-----------------------------------------------------
+inline void _split_THread(const std::string inString,
+			  std::vector<float> &returnVector)
+{
+    std::string item;
+    std::stringstream ss (inString.substr(6));
+    
+    float channel, temperature, humidity;
+
+    while (getline(ss, item, ';'))
+    {
+        channel = stof(item.substr(9,1));
+	temperature = stof(item.substr(item.find("Temperature")+ 14,4));
+	humidity = stof(item.substr(item.find("Humidity")+ 11,4));
+	returnVector.push_back (channel);
+	returnVector.push_back (temperature);
+	returnVector.push_back (humidity);
+    }
 }
 
 //-----------------------------------------------------
@@ -469,8 +500,6 @@ void Camera::_run()
 		    msg_iterator != msg_vector.end();++msg_iterator)
                 {
                     std::string &msg = *msg_iterator;
-		    DEB_ALWAYS() << DEB_VAR1(msg);
-
                     if(msg.substr(0,2) == "15") // generic response
                     {
                         if(msg.substr(3,2) == "OK") // will check what the message is about
@@ -669,16 +698,9 @@ void Camera::_run()
 			if(msg.substr(4,2) == "OK" &&
 			   msg.substr(7,7) == "Channel")
 			  {
-			    DEB_ALWAYS() << msg.substr(18);
-			    int channel = atof(msg.substr(15,1).c_str());
-			    float temperature, humidity;
-			    temperature = atof(msg.substr(31,4).c_str());
-			    humidity = atof(msg.substr(54,4).c_str());
-
-			    DEB_ALWAYS() <<  DEB_VAR3(channel, temperature, humidity);
-			    m_channel = channel;
-			    m_temperature = temperature;
-			    m_humidity = humidity;
+			    std::vector<float> th;
+			    _split_THread(msg, th);
+			    m_channel_temperature_humidity_list = th;
 			  }
 		      }
                 }
@@ -1297,12 +1319,11 @@ void Camera::resetHighVoltage(unsigned int sleep_time)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getTemperatureHumidity(float& temperature, float& humidity)
+void Camera::getTemperatureHumidity(std::vector<float>& values)
 {
     AutoMutex aLock(m_cond.mutex());
     std::stringstream msg;
-    msg << "thread " << m_channel;
+    msg << "thread";
     send(msg.str());
-    temperature = m_temperature;
-    humidity = m_humidity;
+    values = m_channel_temperature_humidity_list;
 }
