@@ -250,12 +250,14 @@ void Camera::_initVariable()
     GAIN_SERVER_RESPONSE["low"]         = LOW;
     GAIN_SERVER_RESPONSE["mid"]         = MID;
     GAIN_SERVER_RESPONSE["high"]        = HIGH;
-    GAIN_SERVER_RESPONSE["ultra high"]  = UHIGH;
+    GAIN_SERVER_RESPONSE["ultra"]       = UHIGH;
+    GAIN_SERVER_RESPONSE["autog"]       = AUTOG;
 
     GAIN_VALUE2SERVER[LOW]              = "lowG";
     GAIN_VALUE2SERVER[MID]              = "midG";
     GAIN_VALUE2SERVER[HIGH]             = "highG";
     GAIN_VALUE2SERVER[UHIGH]            = "uhighG";
+    GAIN_VALUE2SERVER[AUTOG]            = "autoG";
 }
 
 //-----------------------------------------------------

@@ -64,7 +64,8 @@ public:
         LOW,
         MID,
         HIGH,
-        UHIGH
+        UHIGH,
+        AUTOG
     };
 
     enum TriggerMode
