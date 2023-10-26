@@ -1,24 +1,27 @@
-/*
- This file is part of LImA, a Library for Image Acquisition
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2023
+// European Synchrotron Radiation Facility
+// CS40220 38043 Grenoble Cedex 9
+// FRANCE
+//
+// Contact: lima@esrf.fr
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
 
- Copyright (C) : 2009-2011
- European Synchrotron Radiation Facility
- BP 220, Grenoble 38043
- FRANCE
-
- This is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or
- (at your option) any later version.
-
- This software is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program; if not, see <http://www.gnu.org/licenses/>.
-*/
 #include <pthread.h>
 
 #include <stdlib.h>
@@ -99,6 +102,34 @@ inline void _split(const std::string inString,
     }
 
     returnVector.push_back (inString.substr (start));
+}
+
+//-----------------------------------------------------
+// split the thread command returned message and extract
+// the channel, temperature and humidity
+// for instance a 6M model returns:
+// msg=215 OK Channel 0: Temperature = 32.1C, Rel. Humidity = 28.6%;
+// Channel 1: Temperature = 27.0C, Rel. Humidity = 38.1%;
+// Channel 2: Temperature = 29.5C, Rel. Humidity = 0.0%
+
+//-----------------------------------------------------
+inline void _split_THread(const std::string inString,
+			  std::vector<float> &returnVector)
+{
+    std::string item;
+    std::stringstream ss (inString.substr(6));
+    
+    float channel, temperature, humidity;
+
+    while (getline(ss, item, ';'))
+    {
+        channel = stof(item.substr(9,1));
+	temperature = stof(item.substr(item.find("Temperature")+ 14,4));
+	humidity = stof(item.substr(item.find("Humidity")+ 11,4));
+	returnVector.push_back (channel);
+	returnVector.push_back (temperature);
+	returnVector.push_back (humidity);
+    }
 }
 
 //-----------------------------------------------------
@@ -302,6 +333,8 @@ void Camera::_resync()
     send("setackint 0");
     send("dbglvl 1");
     send("version");
+    // read temperature&humidity without channel number camserver will return the first available channel
+    send("thread");
 }
 
 //-----------------------------------------------------
@@ -467,11 +500,10 @@ void Camera::_run()
 		    msg_iterator != msg_vector.end();++msg_iterator)
                 {
                     std::string &msg = *msg_iterator;
-
                     if(msg.substr(0,2) == "15") // generic response
                     {
                         if(msg.substr(3,2) == "OK") // will check what the message is about
-                        {                            
+                        {
                             std::string real_message = msg.substr(6);
 			    size_t position;
                             if(real_message.find("Energy") != std::string::npos)
@@ -659,6 +691,16 @@ void Camera::_run()
 				m_minor_version = atoi(version_vector[1].c_str());
 				m_patch_version = atoi(version_vector[2].c_str());
 			      }
+			  }
+		      }
+		    else if (msg.substr(0,3) == "215")
+		      {
+			if(msg.substr(4,2) == "OK" &&
+			   msg.substr(7,7) == "Channel")
+			  {
+			    std::vector<float> th;
+			    _split_THread(msg, th);
+			    m_channel_temperature_humidity_list = th;
 			  }
 		      }
                 }
@@ -1272,4 +1314,16 @@ void Camera::resetHighVoltage(unsigned int sleep_time)
       else
 	send("setthreshold");
     }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getTemperatureHumidity(std::vector<float>& values)
+{
+    AutoMutex aLock(m_cond.mutex());
+    std::stringstream msg;
+    msg << "thread";
+    send(msg.str());
+    values = m_channel_temperature_humidity_list;
 }
