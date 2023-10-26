@@ -77,7 +77,10 @@ class Pilatus(PyTango.Device_4Impl):
                                 'LOW' : 1,
                                 'MID' : 2,
                                 'HIGH' : 3,
-                                'ULTRA HIGH' : 4}
+                                'ULTRA_HIGH' : 4,
+                                'AUTO': 5,
+                                'Not supported': None,
+        }
 
         self.__CamStatus = {'ERROR' : 0,
                             'DISCONNECTED' : 1,
@@ -149,6 +152,8 @@ class Pilatus(PyTango.Device_4Impl):
             gain = "not set"
         else:
             gain = AttrHelper.getDictKey(self.__ThresholdGain,gain)
+            if gain is None:
+                gain = "not supported"
         attr.set_value(gain)
 
 #------------------------------------------------------------------
