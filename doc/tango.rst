@@ -28,13 +28,15 @@ Attributes
 ======================= ======= ======================= ============================================================
 Attribute name		RW	Type			Description
 ======================= ======= ======================= ============================================================
-threshold_gain		rw	DevString		The detector threshold gain (**LOW,MID,HIGH,ULTRA HIGH**)
+threshold_gain		rw	DevString		The detector threshold gain (**LOW,MID,HIGH,ULTRA HIGH,AUTO**)
 fill_mode		rw	DevString		The gap fill mode (**ON,OFF**)
 threshold		rw	DevLong			The threshold level of detector in eV
 energy_threshold	rw	DevFloat		The energy threshold in keV (set the gain and the threshold)
 trigger_delay		rw	DevDouble		The start exposure delay after the hard trigger
 nb_exposure_per_frame   rw      DevLong                 The number of exposure/frame to set an accumulation of
                                                         frames
+temperature_humidity    ro      DevFloat array          List of both constants, a detector can have multiple sensors
+sensor_channels         ro      DevShort array          List of sens channels (refer to Dectris documentation)
 ======================= ======= ======================= ============================================================
 
 Commands
