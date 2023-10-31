@@ -117,6 +117,9 @@ class Pilatus(PyTango.Device_4Impl):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
 
+        # cache init
+        self.channels = None
+
 #------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
@@ -277,8 +280,17 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def read_temperature_humidity(self, attr):
         values = _PilatusCamera.getTemperatureHumidity()
+        del values[0::3]
         attr.set_value(values)
-            
+
+#------------------------------------------------------------------
+#    Read temperature_humidity sensor channels
+#------------------------------------------------------------------
+    def read_sensor_channels(self, attr):
+        # read only once, will never change
+        if self.channels is None:
+            self.channels = _PilatusCamera.getTemperatureHumidity()[0::3]
+        attr.set_value(self.channels)
 #==================================================================
 #
 #    Pilatus command methods
@@ -375,7 +387,15 @@ class PilatusClass(PyTango.DeviceClass):
               PyTango.READ,
               256],
              {"label": "temperature (C) and humidity (%) for each channel",
-              "description": "<channel x>, temperature, humidity, <channel y>, temperature, humidity ...."
+              "description": "temperature, humidity, temperature, humidity ...."
+             }],
+        'sensor_channels':
+            [[PyTango.DevShort,
+              PyTango.SPECTRUM,
+              PyTango.READ,
+              256],
+             {"label": "Temperature/humidiy sensor channel numbers",
+              "description": "<sensor X>, <sensor Y>, ..."
              }]
         }
 
