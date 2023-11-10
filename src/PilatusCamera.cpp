@@ -1122,7 +1122,12 @@ void Camera::stopAcquisition()
     if(m_state == Camera::RUNNING)
     {
         m_state = Camera::KILL_ACQUISITION;
-        send("k");
+	if (m_pilatus2_model)
+	  send("k");
+	else
+	  // interrupts a single exposure and an exposure series
+	  // only avvailable for Pilatus 3 models (camserver 7)
+	  send("camcmd k");
     }
 }
 
