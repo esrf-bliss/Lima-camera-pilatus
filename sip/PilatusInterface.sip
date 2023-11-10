@@ -29,8 +29,6 @@ namespace Pilatus
     virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
     virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
 
-    double getMinLatTime() const;
-
   private:
     DetInfoCtrlObj(const Pilatus::DetInfoCtrlObj&);
   };
@@ -62,7 +60,8 @@ namespace Pilatus
     int getThreshold();
     Pilatus::Camera::Gain getGain();
     void sendAnyCommand(const std::string& str);
-
+    int getMaxFrameRate() const;
+    double getReadoutTime() const;
   private:
 	  Interface(const Pilatus::Interface&);    
   };
