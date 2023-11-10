@@ -415,13 +415,24 @@ void SyncCtrlObj::prepareAcq()
     // workaround the number of frames to the maximum value than camserver can accept, this
     // is risky !!
 
-    if (trig_mode == IntTrig && m_nb_frames > 65535)
-      THROW_HW_ERROR(InvalidValue) << "In IntTrig trigger mode, maximum number of frames is 65535";
+    
+    if (m_det_info.isPilatus3() && m_nb_frames > 999999)
+      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 999,999";
+    if (m_det_info.isPilatus2() && m_nb_frames > 65535)
+      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 65,535";
 
     if (trig_mode == IntTrigMult)
       nb_frames = 1;
     else if (m_nb_frames == 0)
-      nb_frames = 65535;
+      {
+	if (m_det_info.isPilatus3())
+	  //nb_frames = 999999;
+	  // Hum, don't try with the max. if disk size is not big
+	  // enough camserver with raise an error
+	  nb_frames = 100000;
+	else
+	  nb_frames = 65535;
+      }
     else
 	nb_frames = m_nb_frames;
     
