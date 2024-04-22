@@ -37,6 +37,9 @@ nb_exposure_per_frame   rw      DevLong                 The number of exposure/f
                                                         frames
 temperature_humidity    ro      DevFloat array          List of both constants, a detector can have multiple sensors
 sensor_channels         ro      DevShort array          List of sens channels (refer to Dectris documentation)
+max_frame_rate          ro      DevLong                 The maximum frame rate the detector can achieve, it can
+                                                        can according to the suppored HW ROI
+readout_time            ro      DevDouble               The detector readout time in second
 ======================= ======= ======================= ============================================================
 
 Commands

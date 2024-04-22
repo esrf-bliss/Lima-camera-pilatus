@@ -622,6 +622,7 @@ void Camera::_run()
                             m_state = Camera::ERROR;
                             msg = msg.substr(2);
                             m_error_message = msg.substr(msg.find(" "));
+			    DEB_TRACE() << m_error_message;
                         }
                     }
                     else if(msg.substr(0,2) == "1 ")
@@ -1111,6 +1112,12 @@ void Camera::startAcquisition(int image_number)
 
     send(msg.str());
     m_cond.wait(TIME_OUT);
+    if(m_state == Camera::ERROR)
+    {
+      m_state = Camera::STANDBY;
+      THROW_HW_ERROR(Error) << "Could not start the acquisition: "
+			    << m_error_message;
+    }
 }
 
 //-----------------------------------------------------
@@ -1122,7 +1129,12 @@ void Camera::stopAcquisition()
     if(m_state == Camera::RUNNING)
     {
         m_state = Camera::KILL_ACQUISITION;
-        send("k");
+	if (m_pilatus2_model)
+	  send("k");
+	else
+	  // interrupts a single exposure and an exposure series
+	  // only avvailable for Pilatus 3 models (camserver 7)
+	  send("camcmd k");
     }
 }
 

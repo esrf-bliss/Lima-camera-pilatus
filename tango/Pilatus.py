@@ -146,6 +146,9 @@ class Pilatus(PyTango.Device_4Impl):
 #
 #==================================================================
 
+    def __getattr__(self,name) :
+        return AttrHelper.get_attr_4u(self, name, _PilatusInterface)
+
 #------------------------------------------------------------------
 #    Read threshold_gain attribute
 #------------------------------------------------------------------
@@ -264,7 +267,7 @@ class Pilatus(PyTango.Device_4Impl):
             rmode = AttrHelper.getDictKey(self.__ReadoutRoi, roi)
             attr.set_value(rmode)
         else:
-            attr.set_value('UNKNOWN')
+            attr.set_value('Not supported')
 
 #------------------------------------------------------------------
 #    Write readout_geometry attribute
@@ -396,7 +399,21 @@ class PilatusClass(PyTango.DeviceClass):
               256],
              {"label": "Temperature/humidiy sensor channel numbers",
               "description": "<sensor X>, <sensor Y>, ..."
-             }]
+             }],
+        'max_frame_rate':
+             [[PyTango.DevLong,
+               PyTango.SCALAR,
+               PyTango.READ],
+              {"label": "Maximum Frame Rate",
+              "description": "In Hz"
+              }],
+        'readout_time':
+             [[PyTango.DevDouble,
+               PyTango.SCALAR,
+               PyTango.READ],
+              {"label": "Readout Time",
+              "description": "The detector readout time in second"
+              }],
         }
 
 #------------------------------------------------------------------

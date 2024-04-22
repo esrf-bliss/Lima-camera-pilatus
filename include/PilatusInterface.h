@@ -78,8 +78,6 @@ public:
 	}
 	;
 
-
-	double getMinLatTime() const;
 	bool isPilatus2() const {return m_is_pilatus2;}
 	bool isPilatus3() const {return m_is_pilatus3;}
 	bool isSSerie() const {return m_is_s_serie;}
@@ -107,6 +105,7 @@ class RoiCtrlObj : public HwRoiCtrlObj
   virtual void getRoi(Roi& hw_roi);
 
   int getMaxFrequency() const {return m_current_max_frequency;}
+  double getReadoutTime() const {return m_readout_time;}
 private:
   struct Pattern
   {
@@ -126,6 +125,7 @@ private:
   ROIS				m_possible_rois;
   Roi				m_current_roi;
   int				m_current_max_frequency;
+  double                        m_readout_time;
 };
 
 /*******************************************************************
@@ -155,7 +155,7 @@ public:
 	virtual void setNbHwFrames(int nb_frames);
 	virtual void getNbHwFrames(int& nb_frames);
 
-	virtual void getValidRanges(ValidRangesType& valid_ranges);
+        virtual void getValidRanges(ValidRangesType& valid_ranges);
 
 	void prepareAcq();
 	
@@ -197,6 +197,8 @@ public:
 	int getThreshold(void);
 	Camera::Gain getGain(void);
 	void sendAnyCommand(const std::string& str);
+        int getMaxFrameRate() const {return m_roi.getMaxFrequency();};
+        double getReadoutTime() const {return m_roi.getReadoutTime();};
 
 	virtual bool firstProcessingInPlace() const 
 	{return false;}

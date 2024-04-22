@@ -217,13 +217,6 @@ void DetInfoCtrlObj::getDetectorModel(std::string& model)
     DEB_MEMBER_FUNCT();
     model = m_info.m_det_model;
 }
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-double DetInfoCtrlObj::getMinLatTime() const
-{
-  return (m_is_pilatus3 && !m_is_s_serie) ? 950e-6 : 3e-3;
-}
 
 /*******************************************************************
  * \brief SyncCtrlObj constructor
@@ -235,7 +228,7 @@ SyncCtrlObj::SyncCtrlObj(Camera& cam,
   m_cam(cam),
   m_det_info(det_info),
   m_roi(roi),
-  m_latency(det_info.getMinLatTime())
+  m_latency(roi.getReadoutTime())
 {
 }
 
@@ -377,7 +370,7 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
     double max_time = 1e6;
     valid_ranges.min_exp_time = min_time;
     valid_ranges.max_exp_time = max_time;
-    valid_ranges.min_lat_time = m_latency;
+    valid_ranges.min_lat_time = m_roi.getReadoutTime();
     valid_ranges.max_lat_time = max_time;
 }
 
@@ -394,17 +387,26 @@ void SyncCtrlObj::prepareAcq()
     double exposure =  m_exposure_requested;
     double exposure_period = exposure + m_latency;
 
-    if(m_det_info.isPilatus3() && 
-       (trig_mode == ExtGate || trig_mode == ExtTrigMult))
-      {
-	int max_frequency = m_roi.getMaxFrequency();
-	if(max_frequency > 0)
-	  {
-	    double min_exposure_period = 1./max_frequency;
-	    if(exposure_period < min_exposure_period)
-	      exposure_period = min_exposure_period;
-	  }
-      }
+    int max_frequency = m_roi.getMaxFrequency();
+	   
+    DEB_TRACE() << DEB_VAR1(max_frequency);
+    if(m_det_info.isPilatus3())
+       {
+       if (trig_mode == IntTrig || trig_mode == IntTrigMult)
+	 {
+	   if(max_frequency > 0)
+	     {
+	       double min_exposure_period = 1./max_frequency;
+	       if(exposure_period < min_exposure_period)
+		 exposure_period = min_exposure_period;
+	     }
+	 }
+       else
+	 {
+	   exposure_period = 0.015;
+	 }
+       }
+    DEB_TRACE() << DEB_VAR1(exposure_period);
     m_cam.setExposurePeriod(exposure_period);
 	
     int nb_frames;
@@ -413,13 +415,24 @@ void SyncCtrlObj::prepareAcq()
     // workaround the number of frames to the maximum value than camserver can accept, this
     // is risky !!
 
-    if (trig_mode == IntTrig && m_nb_frames > 65535)
-      THROW_HW_ERROR(InvalidValue) << "In IntTrig trigger mode, maximum number of frames is 65535";
+    
+    if (m_det_info.isPilatus3() && m_nb_frames > 999999)
+      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 999,999";
+    if (m_det_info.isPilatus2() && m_nb_frames > 65535)
+      THROW_HW_ERROR(InvalidValue) << "Maximum number of frames is 65,535";
 
     if (trig_mode == IntTrigMult)
       nb_frames = 1;
     else if (m_nb_frames == 0)
-      nb_frames = 65535;
+      {
+	if (m_det_info.isPilatus3())
+	  //nb_frames = 999999;
+	  // Hum, don't try with the max. if disk size is not big
+	  // enough camserver with raise an error
+	  nb_frames = 100000;
+	else
+	  nb_frames = 65535;
+      }
     else
 	nb_frames = m_nb_frames;
     
@@ -445,14 +458,42 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
   det.getDetectorImageSize(detImageSize);
 
   int fullframe_max_frequency = -1;
+  double readout_time = 03e-3;
   int c18_max_frequency = -1;
   int c2_max_frequency = -1;
 
-  // S (versus X) series do not have hardware ROI capability
-  // need the camera.conf file patched with keyword "camera_s_serie"
-  if (det.isSSerie())
+  // not the good place to manage timing, but this HwObject is always built
+  // then added on not the capability list if camera has detected that the setroi
+  // command is not supported
+  if (det.isPilatus3())
+    {
+      if (det.isSSerie())
+	{
+	  readout_time = 2.04e-3;
+	  fullframe_max_frequency = 25;
+	}        
+      else
+	{
+	  // Pilatus3 X serie
+	  readout_time = 950e-6;
+	}
+    }
+  else
+    {
+      // Pilatus2
+      readout_time = 3e-3;
+      fullframe_max_frequency = 200;      
+    }
+  
+  if (det.isPilatus3() &&
+      (detImageSize == Size(487,195) || // Pilatus 100K
+       detImageSize == Size(487,407) || // Pilatus 200K
+       detImageSize == Size(487,619) || // Pilatus 300K
+       detImageSize == Size(1475,195)   // Pilatus 300K-W
+       ))
     {
       m_has_hardware_roi = false;
+      fullframe_max_frequency = 500;
     }
   else if(detImageSize == Size(2463,2527)) // Pilatus 6M
     {
@@ -543,14 +584,12 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam,DetInfoCtrlObj& det) :
 	     3 * MODULE_HEIGHT + 2 * MODULE_HEIGHT_SPACE);
       m_possible_rois.push_back(PATTERN2ROI(Pattern("L3",500),l3));
     }
-  
-  if(!m_has_hardware_roi)
-    DEB_WARNING() << "Hardware Roi not managed for this detector";
 
   Roi full(Point(0,0),detImageSize);
   m_possible_rois.push_back(PATTERN2ROI(Pattern("0",fullframe_max_frequency),full));
   m_current_roi = full;
   m_current_max_frequency = fullframe_max_frequency;
+  m_readout_time = readout_time;
 }
 
 void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
@@ -795,7 +834,7 @@ Interface::Interface(Camera& cam,const DetInfoCtrlObj::Info* info)
 
     // S (versus X) series do not have hardware ROI capability
     // need the camera.conf file patched with keyword "camera_s_serie"
-    if (!m_det_info.isSSerie())
+    if (!m_det_info.isSSerie() && m_cam.hasRoiCapability())
       {
 	HwRoiCtrlObj *roi = &m_roi;
 	m_cap_list.push_back(HwCap(roi));
@@ -940,7 +979,7 @@ void Interface::getStatus(StatusType& status)
         status.acq = AcqRunning;       
     }    
     status.det_mask = DetExposure;
-    DEB_TRACE() << DEB_VAR2(cam_status,status);
+    //DEB_TRACE() << DEB_VAR2(cam_status,status);
 }
 
 //-----------------------------------------------------
