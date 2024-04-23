@@ -321,7 +321,7 @@ class PilatusClass(PyTango.DeviceClass):
     #    Device Properties
     device_property_list = {
         'host_port' :
-        [PyTango.DevInt,
+        [PyTango.DevLong,
          "detector computer host name",4123],
 
         'host_name' :
