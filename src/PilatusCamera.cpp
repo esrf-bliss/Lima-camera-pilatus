@@ -155,7 +155,8 @@ Camera::Camera(const std::string& host_name,
 		    m_server_ip(host_name),
 		    m_server_port(host_port),
 		    m_config_file(config_file),
-		    m_tmpfs_path(tmpfs_path)
+		    m_tmpfs_path(tmpfs_path),
+		    m_acq_killed(false)
 
 {
     DEB_CONSTRUCTOR();
@@ -607,6 +608,7 @@ void Camera::_run()
                     {
                         DEB_TRACE() << "-- Acquisition Killed"; 
                         m_state = Camera::STANDBY;
+			m_acq_killed = true;
                     }
                     else if(msg.substr(0,2) == "7 ")
                     {
@@ -618,11 +620,18 @@ void Camera::_run()
                         }
                         else
                         {
-                            DEB_TRACE() << "-- ERROR";                      
-                            m_state = Camera::ERROR;
-                            msg = msg.substr(2);
-                            m_error_message = msg.substr(msg.find(" "));
-			    DEB_TRACE() << m_error_message;
+			    // camserver sends a 7 ERR just after the "13 Acquisition Killed" msg
+			    // this is not an real error, so trap it here to not set the status to fault
+			    if (m_acq_killed)
+			        m_acq_killed = false;
+			    else
+			    {
+                                DEB_TRACE() << "-- ERROR";                      
+                                m_state = Camera::ERROR;
+                                msg = msg.substr(2);
+                                m_error_message = msg.substr(msg.find(" "));
+			        DEB_TRACE() << m_error_message;
+			    }
                         }
                     }
                     else if(msg.substr(0,2) == "1 ")

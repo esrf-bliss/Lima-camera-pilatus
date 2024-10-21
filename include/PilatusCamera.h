@@ -208,6 +208,7 @@ private:
     int                     m_patch_version;
     HIGH_VOLTAGE            m_cmd_high_voltage_reset;
     std::vector<float>      m_channel_temperature_humidity_list;
+    bool                    m_acq_killed;
 };
 }
 }
