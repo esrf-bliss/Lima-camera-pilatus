@@ -22,7 +22,7 @@ requirements:
     - cmake
     - lima-core
   run:
-    - lima-tango-server
+    - lima-tango-server 1.9
     - lima-camera-pilatus
 
 about:
