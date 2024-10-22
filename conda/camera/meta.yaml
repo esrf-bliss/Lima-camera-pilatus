@@ -21,6 +21,7 @@ requirements:
     - sip 4.19*  # API v12.7
     - lima-core 1.9
     - cbflib
+    - libgfortran-ng 7.5
   build:
     - git
     - cmake
