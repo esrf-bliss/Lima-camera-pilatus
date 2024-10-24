@@ -658,6 +658,8 @@ public:
 
     AutoMutex lock(m_mutex);
     m_buffer_in_use.insert(address);
+
+    return address;
   }
   virtual void release(void* address)
   {
