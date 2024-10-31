@@ -292,7 +292,7 @@ class Pilatus(PyTango.Device_4Impl):
     def read_sensor_channels(self, attr):
         # read only once, will never change
         if self.channels is None:
-            self.channels = _PilatusCamera.getTemperatureHumidity()[0::3]
+            self.channels = [int(x) for x in _PilatusCamera.getTemperatureHumidity()[0::3]]
         attr.set_value(self.channels)
 #==================================================================
 #

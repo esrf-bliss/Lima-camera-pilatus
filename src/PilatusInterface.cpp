@@ -652,12 +652,14 @@ class _MmapManager : public HwBufferCtrlObj::Callback
   typedef std::multiset<void *> BufferList;
 public:
   _MmapManager() : HwBufferCtrlObj::Callback() {}
-  virtual void map(void* address)
+  virtual void *map(void* address)
   {
     DEB_MEMBER_FUNCT();
 
     AutoMutex lock(m_mutex);
     m_buffer_in_use.insert(address);
+
+    return address;
   }
   virtual void release(void* address)
   {
