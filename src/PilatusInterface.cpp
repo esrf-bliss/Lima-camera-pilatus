@@ -1,7 +1,7 @@
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
-// Copyright (C) : 2009-2023
+// Copyright (C) : 2009-2025
 // European Synchrotron Radiation Facility
 // CS40220 38043 Grenoble Cedex 9
 // FRANCE
@@ -392,7 +392,7 @@ void SyncCtrlObj::prepareAcq()
     DEB_TRACE() << DEB_VAR1(max_frequency);
     if(m_det_info.isPilatus3())
        {
-       if (trig_mode == IntTrig || trig_mode == IntTrigMult)
+       if (trig_mode == IntTrig || trig_mode == IntTrigMult || trig_mode == ExtTrigSingle)
 	 {
 	   if(max_frequency > 0)
 	     {
@@ -403,7 +403,8 @@ void SyncCtrlObj::prepareAcq()
 	 }
        else
 	 {
-	   exposure_period = 0.015;
+           if  (!m_det_info.isSSerie())
+	     exposure_period = 0.015;
 	 }
        }
     DEB_TRACE() << DEB_VAR1(exposure_period);
