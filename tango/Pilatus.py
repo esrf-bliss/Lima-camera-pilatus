@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2023
+# Copyright (C) : 2009-2026
 # European Synchrotron Radiation Facility
 # CS40220 38043 Grenoble Cedex 9
 # FRANCE
@@ -49,8 +49,8 @@
 import PyTango
 import sys
 
-from Lima import Core
-from Lima.Server import AttrHelper
+from lima import core
+from lima.server import AttrHelper
 
 #==================================================================
 #   Pilatus Class Description:
@@ -59,16 +59,16 @@ from Lima.Server import AttrHelper
 #==================================================================
 
 
-class Pilatus(PyTango.Device_4Impl):
+class Pilatus(PyTango.LatestDeviceImpl):
 
 #--------- Add you global variables here --------------------------
-    Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
+    core.DEB_CLASS(core.DebModule.DebModApplication, 'LimaCCDs')
 
 #------------------------------------------------------------------
 #    Device constructor
 #------------------------------------------------------------------
     def __init__(self,cl, name):
-        PyTango.Device_4Impl.__init__(self,cl,name)
+        PyTango.LatestDeviceImpl.__init__(self,cl,name)
         self.init_device()
 
         self.__FillMode = {'ON':True,
@@ -98,9 +98,9 @@ class Pilatus(PyTango.Device_4Impl):
                             'ANYCMD' : 13
                             }
 
-        self.__ReadoutRoi = {'C60': Core.Roi(0,0,0,0),    #Full frame for 6M (0,0,2463,2527)
-                             'C2' : Core.Roi(988,1060,487,407), #C2 for 6M
-                             'C18': Core.Roi(494,636,1475,1255) #C18 for 6M
+        self.__ReadoutRoi = {'C60': core.Roi(0,0,0,0),    #Full frame for 6M (0,0,2463,2527)
+                             'C2' : core.Roi(988,1060,487,407), #C2 for 6M
+                             'C18': core.Roi(494,636,1475,1255) #C18 for 6M
                              }
 
 
@@ -126,7 +126,7 @@ class Pilatus(PyTango.Device_4Impl):
 #    Description: return a list of authorized values if any
 #    argout: DevVarStringArray   
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         return AttrHelper.get_attr_string_value_list(self, attr_name)
 
@@ -136,7 +136,7 @@ class Pilatus(PyTango.Device_4Impl):
 #    Description: resets high voltage
 #    argin: sleep time (s) (-1 to not sleep)
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def resetHighVoltage(self, sleep_time):
         _PilatusCamera.resetHighVoltage(sleep_time)
 
@@ -303,7 +303,7 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 #    sendCamserverCommand  command
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def sendCamserverCmd(self, cmd):
         _PilatusCamera.sendAnyCommand(cmd)
 
@@ -446,7 +446,7 @@ def get_control(**keys) :
                                            config_file = config_file,
                                            tmpfs_path = tmpfs_path)
         _PilatusInterface = PilatusAcq.Interface(_PilatusCamera)
-        _CtControl = Core.CtControl(_PilatusInterface)
+        _CtControl = core.CtControl(_PilatusInterface)
     return _CtControl 
 
 def get_tango_specific_class_n_device() :
