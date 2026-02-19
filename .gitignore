@@ -1,6 +1,7 @@
 *~
 *.pyc
 *target*
-build/
+build*
 tango/build/
 .vscode/
+pyproject.toml
