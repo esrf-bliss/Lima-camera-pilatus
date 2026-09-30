@@ -162,6 +162,7 @@ class Pilatus(Device):
     threshold_gain = attribute(
         dtype=str,
         access=AttrWriteType.READ_WRITE,
+        doc="The detector threshold gain (LOW, MID, HIGH, ULTRA_HIGH, AUTO)",
         fget=_threshold_gain_fget,
         fset=_threshold_gain_fset,
     )
@@ -175,6 +176,7 @@ class Pilatus(Device):
     threshold = attribute(
         dtype=int,
         access=AttrWriteType.READ_WRITE,
+        doc="The threshold level of the detector in eV",
         fget=_threshold_fget,
         fset=_threshold_fset,
     )
@@ -188,6 +190,7 @@ class Pilatus(Device):
     energy_threshold = attribute(
         dtype=float,
         access=AttrWriteType.READ_WRITE,
+        doc="The energy threshold in keV (sets both the gain and the threshold)",
         fget=_energy_threshold_fget,
         fset=_energy_threshold_fset,
     )
@@ -201,6 +204,7 @@ class Pilatus(Device):
     trigger_delay = attribute(
         dtype=float,
         access=AttrWriteType.READ_WRITE,
+        doc="The start exposure delay after the hardware trigger",
         fget=_trigger_delay_fget,
         fset=_trigger_delay_fset,
     )
@@ -214,6 +218,7 @@ class Pilatus(Device):
     nb_exposure_per_frame = attribute(
         dtype=int,
         access=AttrWriteType.READ_WRITE,
+        doc="The number of exposures per frame, to set an accumulation of frames",
         fget=_nb_exposure_per_frame_fget,
         fset=_nb_exposure_per_frame_fset,
     )
@@ -229,6 +234,7 @@ class Pilatus(Device):
     fill_mode = attribute(
         dtype=str,
         access=AttrWriteType.READ_WRITE,
+        doc="The gap fill mode (ON, OFF)",
         fget=_fill_mode_fget,
         fset=_fill_mode_fset,
     )
@@ -237,7 +243,12 @@ class Pilatus(Device):
         status = self._PilatusCamera.status()
         return AttrHelper.getDictKey(self._CamStatus, status)
 
-    cam_state = attribute(dtype=str, access=AttrWriteType.READ, fget=_cam_state_fget)
+    cam_state = attribute(
+        dtype=str,
+        access=AttrWriteType.READ,
+        doc="Camserver status (ERROR, DISCONNECTED, STANDBY, SETTING_*, RUNNING, ...)",
+        fget=_cam_state_fget,
+    )
 
     def _readout_geometry_fget(self):
         if not self._PilatusCamera.hasRoiCapability():
@@ -256,6 +267,7 @@ class Pilatus(Device):
     readout_geometry = attribute(
         dtype=str,
         access=AttrWriteType.READ_WRITE,
+        doc="Detector readout ROI selection (C60, C2, C18), when the HW ROI capability is available",
         fget=_readout_geometry_fget,
         fset=_readout_geometry_fset,
     )
